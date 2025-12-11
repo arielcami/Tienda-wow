@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicios - WoW AzerothCore</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="/css/services.css">
+</head>
+
+<body class="min-h-screen text-white">
+    <!-- Header -->
+    <header class="header-glow sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+
+                <!-- Logo y Título -->
+                <div class="flex items-center space-x-4">
+                    <div class="border-service rounded-lg p-3">
+                        <i class="fas fa-cogs text-2xl wow-service"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold wow-service">Servicios</h1>
+                        <p class="text-sm wow-common">AzerothCore 3.3.5a</p>
+                    </div>
+                </div>
+
+                <!-- Información del Usuario -->
+                <div class="flex items-center space-x-6">
+                    <!-- Tokens -->
+                    <div class="token-display flex items-center space-x-2">
+                        <i class="fas fa-coins text-yellow-400 text-xl"></i>
+                        <div>
+                            <span id="user-tokens" class="font-bold text-lg wow-gold">0</span>
+                            <p class="text-xs wow-common">Tokens</p>
+                        </div>
+                    </div>
+
+                    <!-- Usuario -->
+                    <div class="text-right">
+                        <p class="text-sm wow-common">Bienvenido,</p>
+                        <p id="username" class="font-bold text-lg wow-service"></p>
+                    </div>
+
+                    <!-- Navegación -->
+                    <div class="flex items-center space-x-4">
+                        <a href="/tienda" class="btn-service">
+                            <i class="fas fa-store mr-2"></i>Regresar a Tienda
+                        </a>
+                        <button onclick="servicesApp.logout()"
+                            class="btn-service bg-gradient-to-r from-red-600 to-red-800">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Salir
+                        </button>
+                    </div>
+
+                    <div id="admin-button-container" class="hidden ml-4">
+                        <a href="/admin"
+                            class="btn-service bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-800 hover:to-pink-800">
+                            <i class="fas fa-tools mr-2"></i>Administrar Tienda
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h2 class="text-5xl font-bold wow-service mb-4">SERVICIOS PARA PERSONAJES</h2>
+            <p class="text-xl wow-common max-w-2xl mx-auto">
+                Cambia tu nombre, compra oro, cambia peinado, raza, facción y mucho más. Recuerda que el personaje debe estar OFFLINE.
+            </p>
+        </div>
+
+        <!-- Navegación por Categorías -->
+        <section class="mb-12">
+            <h2 class="section-title text-3xl font-bold wow-service mb-6">
+                <i class="fas fa-filter mr-3"></i>CATEGORÍAS DE SERVICIOS
+            </h2>
+            <div class="bg-wow-panel rounded-2xl p-8 shadow-2xl">
+                <div id="categories-nav" class="category-nav">
+                    <div class="loading-message">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando categorías...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Servicios por Categoría -->
+        <section class="mb-16">
+            <h2 id="current-category-title" class="section-title text-3xl font-bold wow-service mb-6">
+                <i class="fas fa-concierge-bell mr-3"></i>SELECCIONA UNA CATEGORÍA
+            </h2>
+
+            <div class="services-container">
+                <div id="services-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-hand-pointer text-gray-400 text-6xl mb-4"></i>
+                        <p class="text-white text-xl">Selecciona una categoría para ver los servicios</p>
+                        <p class="text-gray-400">Haz clic en cualquier categoría de arriba para comenzar</p>
+                    </div>
+                </div>
+
+                <div id="services-loading" class="hidden">
+                    <div class="loading-message">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando servicios...</p>
+                    </div>
+                </div>
+
+                <div id="no-services-message" class="hidden">
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-concierge-bell text-gray-400 text-6xl mb-4"></i>
+                        <p class="text-white text-xl">No hay servicios en esta categoría</p>
+                        <p class="text-gray-400">Intenta con otra categoría</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modales -->
+    <div id="service-detail-modal"
+        class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-wow-dark rounded-2xl border-service max-w-2xl w-full">
+            <div class="bg-gradient-to-r from-blue-900 to-transparent p-6 border-b border-service">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 id="service-modal-title" class="text-2xl font-bold wow-service mb-2"></h3>
+                        <div class="flex items-center space-x-4">
+                            <span class="token-display px-4 py-2">
+                                <i class="fas fa-coins text-yellow-400 mr-2"></i>
+                                <span id="service-modal-price" class="font-bold text-lg"></span> Tokens
+                            </span>
+                            <div id="service-modal-badges" class="flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                    <button class="close-service-modal text-gray-400 hover:text-white text-2xl transition duration-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div class="mb-6">
+                    <h4 class="text-lg font-bold text-white mb-2">
+                        <i class="fas fa-info-circle text-service mr-2"></i>Descripción
+                    </h4>
+                    <p id="service-modal-description" class="text-gray-300"></p>
+                </div>
+
+                <!-- NO QUEDA BIEN ASÍ
+                <div class="mb-6">
+                    <h4 class="text-lg font-bold text-white mb-2">
+                        <i class="fas fa-clipboard-check text-service mr-2"></i>Requisitos
+                    </h4>
+                    <div id="service-modal-requirements" class="flex flex-wrap gap-2"></div>
+                </div>
+                -->
+
+                <div class="service-info">
+                    <p class="text-white font-bold mb-2">
+                        <i class="fas fa-exclamation-triangle text-yellow-400 mr-2"></i>Importante
+                    </p>
+                    <p class="text-gray-300 text-sm">
+                        • El personaje debe estar OFFLINE para aplicar el servicio<br>
+                        • Los cambios se aplican inmediatamente después de la compra<br>
+                        • Para servicios de cambio (nombre, raza, facción) se activará al próximo login<br>
+                        • Las compras son definitivas y no tienen reembolso
+                    </p>
+                </div>
+
+                <div class="mt-8 text-center">
+                    <button id="service-modal-buy-btn" class="btn-service px-8 py-4 text-lg w-full">
+                        <i class="fas fa-shopping-cart mr-2"></i>Seleccionar Personaje
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="character-select-modal"
+        class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-wow-dark rounded-2xl border-success character-select-modal">
+            <div class="bg-gradient-to-r from-green-900 to-transparent p-6 border-b border-success">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-2xl font-bold wow-success mb-2">Seleccionar Personaje</h3>
+                        <p id="character-select-service" class="text-gray-300"></p>
+                    </div>
+                    <button
+                        class="close-character-modal text-gray-400 hover:text-white text-2xl transition duration-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6 max-h-96 overflow-y-auto">
+                <div id="character-list">
+                    <div class="loading-message">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando personajes...</p>
+                    </div>
+                </div>
+
+                <div id="no-characters-message" class="hidden">
+                    <div class="text-center py-8">
+                        <i class="fas fa-user-slash text-gray-400 text-6xl mb-4"></i>
+                        <p class="text-white text-xl">No tienes personajes</p>
+                        <p class="text-gray-400">Crea un personaje en el juego primero</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-success">
+                <div class="flex space-x-4">
+                    <button class="close-character-modal btn-service flex-1 bg-gradient-to-r from-gray-600 to-gray-800">
+                        <i class="fas fa-times mr-2"></i>Cancelar
+                    </button>
+                    <button id="confirm-purchase-btn" class="btn-success flex-1" disabled>
+                        <i class="fas fa-check mr-2"></i>Confirmar Compra
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/services.js"></script>
+</body>
+
+</html>

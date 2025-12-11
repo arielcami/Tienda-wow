@@ -1,0 +1,29 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+
+/* Estilos personalizados para tema WoW */
+.wow-gold {
+    color: #FFD700;
+}
+
+.wow-epic {
+    color: #A335EE;
+}
+
+.wow-rare {
+    color: #0070DD;
+}
+
+.wow-uncommon {
+    color: #1EFF00;
+}
+
+.wow-common {
+    color: #FFFFFF;
+}
+
+.background-wow {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+}

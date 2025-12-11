@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  wow-store:
+    build: .
+    container_name: wow-store-web
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_AUTH_HOST=host.docker.internal
+      - DB_AUTH_USER=${DB_AUTH_USER:-root}
+      - DB_AUTH_PASSWORD=${DB_AUTH_PASSWORD:-acore}
+      - DB_AUTH_DATABASE=${DB_AUTH_DATABASE:-acore_auth}
+      - DB_CHARACTERS_HOST=host.docker.internal
+      - DB_CHARACTERS_USER=${DB_CHARACTERS_USER:-root}
+      - DB_CHARACTERS_PASSWORD=${DB_CHARACTERS_PASSWORD:-acore}
+      - DB_CHARACTERS_DATABASE=${DB_CHARACTERS_DATABASE:-acore_characters}
+      - DB_WORLD_HOST=host.docker.internal
+      - DB_WORLD_USER=${DB_WORLD_USER:-root}
+      - DB_WORLD_PASSWORD=${DB_WORLD_PASSWORD:-acore}
+      - DB_WORLD_DATABASE=${DB_WORLD_DATABASE:-acore_world}
+      - SESSION_SECRET=${SESSION_SECRET:-wow-store-secret-key}
+      - NODE_ENV=production
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./public/icon_images:/app/public/icon_images
+    restart: unless-stopped

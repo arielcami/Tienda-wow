@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Tienda WoW</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=MedievalSharp&display=swap');
+
+        :root {
+            --gold-primary: #ffd700;
+            --gold-secondary: #b8860b;
+            --epic-purple: #a335ee;
+            --rare-blue: #0070dd;
+            --common-gray: #9d9d9d;
+            --wow-dark: #1a1a1a;
+            --wow-darker: #0d0d0d;
+        }
+
+        body {
+            font-family: 'Cinzel', serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #2d2d2d 100%);
+            min-height: 100vh;
+        }
+
+        .wow-gold {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .wow-epic {
+            color: var(--epic-purple);
+            text-shadow: 0 0 10px rgba(163, 53, 238, 0.5);
+        }
+
+        .admin-container {
+            background: linear-gradient(135deg, rgba(13, 13, 13, 0.95), rgba(26, 26, 26, 0.95));
+            border: 2px solid;
+            border-image: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary), var(--epic-purple)) 1;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary));
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-epic {
+            background: linear-gradient(135deg, var(--epic-purple), #6715a3);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+        }
+
+        .btn-epic:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(163, 53, 238, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+        }
+
+        .input-epic {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9), rgba(45, 45, 45, 0.9));
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            color: white;
+            font-family: 'MedievalSharp', cursive;
+            transition: all 0.3s ease;
+        }
+
+        .input-epic:focus {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            background: linear-gradient(135deg, rgba(32, 32, 32, 0.9), rgba(55, 55, 55, 0.9));
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .status-inactive {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, rgba(163, 53, 238, 0.1), rgba(255, 215, 0, 0.1));
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .table-row {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        .table-row:hover {
+            background-color: rgba(255, 215, 0, 0.05);
+        }
+
+        .category-badge {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            display: inline-block;
+        }
+
+        /* Estilos para selects personalizados */
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper::after {
+            content: '';
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffd700' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            pointer-events: none;
+        }
+
+        select.input-epic {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9), rgba(45, 45, 45, 0.9));
+            color: white;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 12px 40px 12px 16px;
+            font-family: 'MedievalSharp', cursive;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        select.input-epic:focus {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            background: linear-gradient(135deg, rgba(32, 32, 32, 0.9), rgba(55, 55, 55, 0.9));
+            outline: none;
+        }
+
+        /* Estilos para las opciones del select (dropdown) */
+        select.input-epic option {
+            background-color: #1a1a1a;
+            color: white;
+            padding: 12px;
+            font-family: 'MedievalSharp', cursive;
+        }
+
+        select.input-epic option:hover {
+            background-color: rgba(255, 215, 0, 0.1);
+        }
+
+        select.input-epic option:checked {
+            background-color: rgba(255, 215, 0, 0.2);
+            color: var(--gold-primary);
+        }
+
+        /* Para navegadores Webkit (Chrome, Safari) */
+        select.input-epic::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        select.input-epic::-webkit-scrollbar-track {
+            background: rgba(26, 26, 26, 0.9);
+            border-radius: 4px;
+        }
+
+        select.input-epic::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        select.input-epic::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 215, 0, 0.5);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen text-white p-4">
+    <!-- Header -->
+    <header class="mb-8">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold wow-gold">
+                    <i class="fas fa-crown mr-3"></i>Panel de Administración
+                </h1>
+                <p class="text-gray-400">Gestión de Tienda WoW</p>
+            </div>
+            <div>
+                <a href="/tienda" class="btn-epic mr-3">
+                    <i class="fas fa-store mr-2"></i>Volver a Tienda
+                </a>
+                <button onclick="logout()" class="btn-danger">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="admin-container p-8">
+        <!-- Sección de Estadísticas -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gradient-to-r from-purple-900/50 to-transparent p-6 rounded-2xl border border-purple-700/50">
+                <div class="flex items-center">
+                    <i class="fas fa-box text-3xl text-purple-400 mr-4"></i>
+                    <div>
+                        <h3 class="text-2xl font-bold" id="total-items">0</h3>
+                        <p class="text-gray-400">Items Totales</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gradient-to-r from-yellow-900/50 to-transparent p-6 rounded-2xl border border-yellow-700/50">
+                <div class="flex items-center">
+                    <i class="fas fa-coins text-3xl text-yellow-400 mr-4"></i>
+                    <div>
+                        <h3 class="text-2xl font-bold" id="active-items">0</h3>
+                        <p class="text-gray-400">Items Activos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gradient-to-r from-blue-900/50 to-transparent p-6 rounded-2xl border border-blue-700/50">
+                <div class="flex items-center">
+                    <i class="fas fa-tag text-3xl text-blue-400 mr-4"></i>
+                    <div>
+                        <h3 class="text-2xl font-bold" id="total-categories">0</h3>
+                        <p class="text-gray-400">Categorías</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gradient-to-r from-green-900/50 to-transparent p-6 rounded-2xl border border-green-700/50">
+                <div class="flex items-center">
+                    <i class="fas fa-shopping-cart text-3xl text-green-400 mr-4"></i>
+                    <div>
+                        <h3 class="text-2xl font-bold" id="total-tokens">0</h3>
+                        <p class="text-gray-400">Tokens Totales</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles -->
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold wow-gold">
+                <i class="fas fa-list mr-3"></i>Items de la Tienda
+            </h2>
+            <button onclick="showAddItemModal()" class="btn-gold">
+                <i class="fas fa-plus mr-2"></i>Agregar Nuevo Item
+            </button>
+        </div>
+
+        <!-- Tabla de Items -->
+        <div class="overflow-x-auto rounded-2xl border border-yellow-700/30">
+            <table class="min-w-full">
+                <thead class="table-header">
+                    <tr>
+                        <th class="py-4 px-6 text-left">ID</th>
+                        <th class="py-4 px-6 text-left">Nombre</th>
+                        <th class="py-4 px-6 text-left">Categoría</th>
+                        <th class="py-4 px-6 text-left">Costo</th>
+                        <th class="py-4 px-6 text-left">Estado</th>
+                        <th class="py-4 px-6 text-left">Compras</th>
+                        <th class="py-4 px-6 text-left">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="items-table-body">
+                    <!-- Los items se cargarán aquí -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-400"></div>
+            <p class="text-gray-400 mt-4">Cargando items...</p>
+        </div>
+    </main>
+
+    <!-- Modal para Agregar/Editar Item -->
+    <div id="item-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
+        <div class="admin-container max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 id="modal-title" class="text-2xl font-bold wow-gold">
+                        <i class="fas fa-plus mr-2"></i>Agregar Nuevo Item
+                    </h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-white text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="item-form" class="space-y-6">
+                    <input type="hidden" id="item-entry" name="original_entry">
+
+                    <!-- Entry (ID) -->
+                    <div>
+                        <label class="block text-yellow-400 mb-2 font-bold">
+                            <i class="fas fa-hashtag mr-2"></i>ID del Item (Entry)
+                        </label>
+                        <input type="number" id="item-id" name="entry" required
+                            class="input-epic w-full px-4 py-3 rounded-lg focus:outline-none" placeholder="Ej: 12345"
+                            min="1">
+                    </div>
+
+                    <!-- Nombre -->
+                    <div>
+                        <label class="block text-yellow-400 mb-2 font-bold">
+                            <i class="fas fa-tag mr-2"></i>Nombre del Item
+                        </label>
+                        <input type="text" id="item-name" name="name" required
+                            class="input-epic w-full px-4 py-3 rounded-lg focus:outline-none"
+                            placeholder="Ej: Espada del Rey Caído">
+                    </div>
+
+                    <!-- Categoría -->
+                    <div>
+                        <label class="block text-yellow-400 mb-2 font-bold">
+                            <i class="fas fa-list mr-2"></i>Categoría
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="item-category" name="category"
+                                class="input-epic w-full px-4 py-3 rounded-lg focus:outline-none">
+                                <option value="Armadura de placas">Armadura de placas</option>
+                                <option value="Hacha">Hacha</option>
+                                <option value="Hacha de dos manos">Hacha de dos manos</option>
+                                <option value="Espada">Espada</option>
+                                <option value="Espada de dos manos">Espada de dos manos</option>
+                                <option value="Maza">Maza</option>
+                                <option value="Maza de dos manos">Maza de dos manos</option>
+                                <option value="Arma de asta">Arma de asta</option>
+                                <option value="Bastón">Bastón</option>
+                                <option value="Daga">Daga</option>
+                                <option value="Arma de puño">Arma de puño</option>
+                                <option value="Armadura de tela">Armadura de tela</option>
+                                <option value="Armadura de cuero">Armadura de cuero</option>
+                                <option value="Armadura de malla">Armadura de malla</option>
+                                <option value="Escudo">Escudo</option>
+                                <option value="Anillo">Anillo</option>
+                                <option value="Cuello">Cuello</option>
+                                <option value="Abalorio">Abalorio</option>
+                                <option value="Capa">Capa</option>
+                                <option value="Bolsa">Bolsa</option>
+                                <option value="Gema">Gema</option>
+                                <option value="Encantamiento">Encantamiento</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tooltip Image -->
+                    <div>
+                        <label class="block text-yellow-400 mb-2 font-bold">
+                            <i class="fas fa-image mr-2"></i>Imagen del Tooltip
+                        </label>
+                        <input type="text" id="item-tooltip-image" name="tooltip_image"
+                            class="input-epic w-full px-4 py-3 rounded-lg focus:outline-none"
+                            placeholder="Ej: 12345.png (dejar vacío para auto-generar)">
+                        <p class="text-gray-400 text-sm mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Nombre del archivo PNG en /public/tooltips/
+                        </p>
+                    </div>
+
+                    <!-- Costo en Tokens -->
+                    <div>
+                        <label class="block text-yellow-400 mb-2 font-bold">
+                            <i class="fas fa-coins mr-2"></i>Costo en Tokens
+                        </label>
+                        <input type="number" id="item-cost" name="token_cost" required
+                            class="input-epic w-full px-4 py-3 rounded-lg focus:outline-none" placeholder="Ej: 100"
+                            min="0">
+                    </div>
+
+                    <!-- Estado (solo para edición) -->
+                    <div id="status-field" class="hidden">
+                        <label class="block text-yellow-400 mb-2 font-bold">
+                            <i class="fas fa-power-off mr-2"></i>Estado
+                        </label>
+                        <div class="flex space-x-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="estado" value="1" checked
+                                    class="mr-2 text-green-400 focus:ring-green-400">
+                                <span class="text-green-300">Activo</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="estado" value="0"
+                                    class="mr-2 text-red-400 focus:ring-red-400">
+                                <span class="text-red-300">Inactivo</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <button type="button" onclick="closeModal()" class="btn-epic">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </button>
+                        <button type="submit" id="submit-btn" class="btn-gold">
+                            <i class="fas fa-save mr-2"></i>Guardar Item
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="/js/admin.js"></script>
+</body>
+
+</html>
