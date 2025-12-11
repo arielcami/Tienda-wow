@@ -161,7 +161,8 @@ VALUES
 ('Cambio de raza', 'Si adquieres este servicio, podrás cambiar la raza de tu personaje (Entre razas que comparten clase), también incluye un cambio de nombre.', 30, 'race_change', 'Cambiar raza', 128, 0, 0, 1, 80, 1, 1),
 ('Desatascar', 'Si adquieres este servicio, se teletransportará tu personaje a Gadgetzán, Tanaris.', 5, 'unstuck', 'Desatascar', 0, 0, 0, 1, 80, 1, 2);
 
--- LIMPIEZA DE LOCALES QUE NO SE USAN:
+-- OPCIONAL: LIMPIEZA DE LOCALES QUE NO SE USAN:
+/*
 DELETE FROM achievement_reward_locale WHERE Locale NOT IN ('esMX');
 DELETE FROM broadcast_text_locale WHERE locale NOT IN ('esMX');
 DELETE FROM broadcast_text_locale WHERE locale NOT IN ('esMX');
@@ -179,3 +180,4 @@ DELETE FROM quest_greeting_locale WHERE locale NOT IN ('esMX');
 DELETE FROM quest_offer_reward_locale WHERE locale NOT IN ('esMX');
 DELETE FROM quest_request_items_locale WHERE locale NOT IN ('esMX');
 DELETE FROM quest_template_locale WHERE locale NOT IN ('esMX');
+*/
