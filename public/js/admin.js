@@ -3,6 +3,8 @@
 
 // Variables globales
 let currentItems = [];
+let currentEditingEntry = null;
+let currentTooltipFilename = null;
 
 // Lista de categorías válidas (debe coincidir con adminRoutes.js)
 const VALID_CATEGORIES = [
@@ -29,6 +31,271 @@ const VALID_CATEGORIES = [
     'Gema',
     'Encantamiento'
 ];
+
+
+// Abrir selector de archivos
+function openTooltipFileSelector() {
+    document.getElementById('tooltip-image-file').click();
+}
+
+// Configurar eventos del input file
+document.addEventListener('DOMContentLoaded', function () {
+    const fileInput = document.getElementById('tooltip-image-file');
+    if (fileInput) {
+        fileInput.addEventListener('change', handleTooltipFileSelect);
+    }
+});
+
+// Manejar selección de archivo
+async function handleTooltipFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validaciones
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/bmp'];
+    
+    if (file.size > maxSize) {
+        showTooltipError('El archivo es muy grande (máx. 5MB)');
+        resetFileInput();
+        return;
+    }
+    
+    if (!allowedTypes.includes(file.type)) {
+        showTooltipError('Formato no permitido. Use JPG, PNG o BMP');
+        resetFileInput();
+        return;
+    }
+    
+    // Mostrar preview inmediato (sin subir al servidor aún)
+    showFilePreview(file);
+    
+    // Mostrar mensaje informativo
+    showTooltipSuccess('Imagen seleccionada. Se subirá al guardar el item.');
+}
+
+// Mostrar preview del archivo
+function showFilePreview(file) {
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+        const previewContainer = document.getElementById('tooltip-preview-container');
+        const previewImg = document.getElementById('current-tooltip-preview');
+        const filenameSpan = document.getElementById('current-filename');
+        const filesizeSpan = document.getElementById('current-filesize');
+
+        previewImg.src = e.target.result;
+        filenameSpan.textContent = file.name;
+        filesizeSpan.textContent = formatFileSize(file.size);
+
+        previewContainer.classList.remove('hidden');
+    };
+
+    reader.readAsDataURL(file);
+}
+
+// Subir archivo al servidor
+async function uploadTooltipFile(file) {
+    try {
+        // Mostrar progress bar
+        showUploadProgress(true);
+
+        const formData = new FormData();
+        formData.append('tooltipImage', file);
+
+        const response = await axios.post(`/api/admin/items/${currentEditingEntry}/upload-tooltip`,
+            formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            onUploadProgress: (progressEvent) => {
+                if (progressEvent.total) {
+                    const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    updateUploadProgress(percent);
+                }
+            }
+        }
+        );
+
+        // Ocultar progress bar
+        showUploadProgress(false);
+
+        if (response.data.success) {
+            currentTooltipFilename = response.data.filename;
+            showTooltipSuccess('Imagen subida correctamente');
+
+            // Actualizar UI
+            updateTooltipUIAfterUpload(response.data.filename);
+
+            // Limpiar input file
+            resetFileInput();
+        }
+
+        return response.data;
+
+    } catch (error) {
+        showUploadProgress(false);
+        console.error('Error subiendo imagen:', error);
+
+        const errorMsg = error.response?.data?.error ||
+            error.message ||
+            'Error al subir la imagen';
+
+        showTooltipError(errorMsg);
+
+        // Limpiar preview en caso de error
+        document.getElementById('tooltip-preview-container').classList.add('hidden');
+        resetFileInput();
+
+        throw error;
+    }
+}
+
+// Eliminar imagen del tooltip
+async function removeTooltipImage() {
+    if (!currentEditingEntry || !currentTooltipFilename) {
+        showTooltipError('No hay imagen para eliminar');
+        return;
+    }
+
+    const confirmResult = await Swal.fire({
+        title: '¿Eliminar imagen?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    try {
+        const response = await axios.delete(`/api/admin/items/${currentEditingEntry}/remove-tooltip`);
+
+        if (response.data.success) {
+            showTooltipSuccess('Imagen eliminada correctamente');
+
+            // Limpiar UI
+            document.getElementById('tooltip-preview-container').classList.add('hidden');
+            currentTooltipFilename = null;
+        }
+
+    } catch (error) {
+        console.error('Error eliminando imagen:', error);
+        showTooltipError('Error al eliminar la imagen');
+    }
+}
+
+// Cargar información de tooltip existente al editar
+async function loadExistingTooltipInfo(entry) {
+    try {
+        const response = await axios.get(`/api/admin/items/${entry}/tooltip-info`);
+
+        if (response.data.success && response.data.hasImage) {
+            currentTooltipFilename = response.data.filename;
+
+            // Mostrar preview
+            const previewContainer = document.getElementById('tooltip-preview-container');
+            const previewImg = document.getElementById('current-tooltip-preview');
+            const filenameSpan = document.getElementById('current-filename');
+            const filesizeSpan = document.getElementById('current-filesize');
+
+            previewImg.src = response.data.url + '?t=' + Date.now(); // Cache busting
+            filenameSpan.textContent = response.data.filename;
+            filesizeSpan.textContent = 'Cargada';
+
+            previewContainer.classList.remove('hidden');
+        } else {
+            // No hay imagen
+            document.getElementById('tooltip-preview-container').classList.add('hidden');
+            currentTooltipFilename = null;
+        }
+
+    } catch (error) {
+        console.error('Error cargando información del tooltip:', error);
+        // Silenciar error, solo no mostrar preview
+    }
+}
+
+// Actualizar UI después de upload exitoso
+function updateTooltipUIAfterUpload(filename) {
+    const previewContainer = document.getElementById('tooltip-preview-container');
+    const filenameSpan = document.getElementById('current-filename');
+    const filesizeSpan = document.getElementById('current-filesize');
+
+    if (!previewContainer.classList.contains('hidden')) {
+        filenameSpan.textContent = filename;
+        filesizeSpan.textContent = 'Subida';
+    }
+}
+
+// Actualizar nombre esperado del archivo
+function updateExpectedFilename() {
+    const entryInput = document.getElementById('item-id');
+    const expectedSpan = document.getElementById('expected-filename');
+
+    if (entryInput.value) {
+        expectedSpan.textContent = `${entryInput.value}.[ext]`;
+    } else {
+        expectedSpan.textContent = '[entry].[ext]';
+    }
+}
+
+// Funciones auxiliares UI
+function showTooltipError(message) {
+    const errorDiv = document.getElementById('tooltip-error');
+    const errorText = document.getElementById('tooltip-error-text');
+
+    errorText.textContent = message;
+    errorDiv.classList.remove('hidden');
+
+    setTimeout(() => {
+        errorDiv.classList.add('hidden');
+    }, 5000);
+}
+
+function showTooltipSuccess(message) {
+    const successDiv = document.getElementById('tooltip-success');
+    const successText = document.getElementById('tooltip-success-text');
+
+    successText.textContent = message;
+    successDiv.classList.remove('hidden');
+
+    setTimeout(() => {
+        successDiv.classList.add('hidden');
+    }, 3000);
+}
+
+function showUploadProgress(show) {
+    const progressDiv = document.getElementById('upload-progress');
+    if (show) {
+        progressDiv.classList.remove('hidden');
+        updateUploadProgress(0);
+    } else {
+        progressDiv.classList.add('hidden');
+    }
+}
+
+function updateUploadProgress(percent) {
+    document.getElementById('upload-percent').textContent = percent + '%';
+    document.getElementById('upload-progress-bar').style.width = percent + '%';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function resetFileInput() {
+    document.getElementById('tooltip-image-file').value = '';
+}
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function () {
@@ -149,16 +416,32 @@ function updateStats(items) {
     document.getElementById('total-tokens').textContent = totalTokens;
 }
 
-// Mostrar modal para agregar item
+// inicializar tooltip
 function showAddItemModal() {
     document.getElementById('modal-title').innerHTML = '<i class="fas fa-plus mr-2"></i>Agregar Nuevo Item';
     document.getElementById('item-form').reset();
-    document.getElementById('item-entry').value = ''; // Hidden vacío
+    document.getElementById('item-entry').value = '';
     document.getElementById('status-field').classList.add('hidden');
     document.getElementById('submit-btn').innerHTML = '<i class="fas fa-save mr-2"></i>Guardar Item';
 
     // Establecer categoría por defecto
     document.getElementById('item-category').value = 'Armadura de placas';
+
+    // Inicializar tooltip upload
+    currentEditingEntry = null;
+    currentTooltipFilename = null;
+    document.getElementById('tooltip-preview-container').classList.add('hidden');
+    document.getElementById('upload-btn-text').textContent = 'Subir Imagen';
+    document.getElementById('expected-filename').textContent = '[entry].[ext]';
+
+    // Limpiar mensajes
+    document.getElementById('tooltip-error').classList.add('hidden');
+    document.getElementById('tooltip-success').classList.add('hidden');
+
+    // Configurar event listener para entry input
+    const entryInput = document.getElementById('item-id');
+    entryInput.removeEventListener('input', updateExpectedFilename);
+    entryInput.addEventListener('input', updateExpectedFilename);
 
     const modal = document.getElementById('item-modal');
     modal.classList.remove('hidden');
@@ -182,7 +465,6 @@ async function editItem(entry) {
             document.getElementById('item-id').value = item.entry;
             document.getElementById('item-name').value = item.name;
             document.getElementById('item-category').value = item.category || 'Armadura de placas';
-            document.getElementById('item-tooltip-image').value = item.tooltip_image || '';
             document.getElementById('item-cost').value = item.token_cost;
 
             // Estado (solo visible en edición)
@@ -190,6 +472,28 @@ async function editItem(entry) {
             document.getElementById('status-field').classList.remove('hidden');
 
             document.getElementById('submit-btn').innerHTML = '<i class="fas fa-save mr-2"></i>Actualizar Item';
+
+            // Inicializar tooltip upload
+            currentEditingEntry = item.entry;
+            currentTooltipFilename = item.tooltip_image || null;
+
+            // Actualizar nombre esperado
+            updateExpectedFilename();
+
+            // Cambiar texto del botón de upload
+            document.getElementById('upload-btn-text').textContent = item.tooltip_image ? 'Reemplazar Imagen' : 'Subir Imagen';
+
+            // Cargar información del tooltip existente
+            await loadExistingTooltipInfo(item.entry);
+
+            // Configurar event listener para entry input
+            const entryInput = document.getElementById('item-id');
+            entryInput.removeEventListener('input', updateExpectedFilename);
+            entryInput.addEventListener('input', updateExpectedFilename);
+
+            // Limpiar mensajes
+            document.getElementById('tooltip-error').classList.add('hidden');
+            document.getElementById('tooltip-success').classList.add('hidden');
 
             const modal = document.getElementById('item-modal');
             modal.classList.remove('hidden');
@@ -205,12 +509,9 @@ document.getElementById('item-form').addEventListener('submit', async function (
     e.preventDefault();
 
     const formData = new FormData(this);
-    const originalEntry = document.getElementById('item-entry').value; // Hidden field
+    const originalEntry = document.getElementById('item-entry').value;
     const isEdit = originalEntry !== '';
-
-    // Para creación: entry viene del campo visible (item-id)
-    // Para edición: entry es el original (hidden) pero usamos el visible para mostrar
-    const entry = isEdit ? originalEntry : formData.get('entry');
+    const entry = formData.get('entry');
 
     // Validar entry
     if (!entry || entry <= 0) {
@@ -225,35 +526,51 @@ document.getElementById('item-form').addEventListener('submit', async function (
         return;
     }
 
-    const data = {
-        entry: entry,
-        name: formData.get('name'),
-        category: category || 'Armadura de placas',
-        tooltip_image: formData.get('tooltip_image') || null,
-        token_cost: formData.get('token_cost')
-    };
-
-    // Solo agregar estado si es edición
-    if (isEdit) {
-        data.estado = formData.get('estado');
-    }
-
-    // console.log('DEBUG - Datos a enviar:', data);
-
     try {
-        let response;
+        // Crear FormData para enviar archivo si existe
+        const uploadFormData = new FormData();
+
+        // Agregar campos del formulario
+        uploadFormData.append('entry', entry);
+        uploadFormData.append('name', formData.get('name'));
+        uploadFormData.append('category', category || 'Armadura de placas');
+        uploadFormData.append('token_cost', formData.get('token_cost'));
 
         if (isEdit) {
-            // Para edición: usar el entry original como parámetro de ruta
-            response = await axios.put(`/api/admin/items/${originalEntry}`, data);
-        } else {
-            // Para creación: enviar normalmente
-            response = await axios.post('/api/admin/items', data);
+            uploadFormData.append('original_entry', originalEntry);
+            uploadFormData.append('estado', formData.get('estado'));
         }
 
+        // Agregar archivo si se seleccionó uno
+        const fileInput = document.getElementById('tooltip-image-file');
+        if (fileInput.files[0]) {
+            uploadFormData.append('tooltipImage', fileInput.files[0]);
+        }
+
+        // Mostrar loading
+        Swal.fire({
+            title: isEdit ? 'Actualizando item...' : 'Creando item...',
+            text: 'Procesando imagen y guardando en base de datos',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Enviar TODO en una sola petición
+        const response = await axios.post('/api/admin/items/with-image',
+            uploadFormData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        }
+        );
+
         if (response.data.success) {
+            Swal.close();
             closeModal();
             await loadItems();
+
             Swal.fire({
                 icon: 'success',
                 title: isEdit ? '¡Item actualizado!' : '¡Item agregado!',
@@ -261,11 +578,18 @@ document.getElementById('item-form').addEventListener('submit', async function (
                 confirmButtonColor: '#0068caff'
             });
         } else {
+            Swal.close();
             showError(response.data.error || 'Error desconocido');
         }
+
     } catch (error) {
+        Swal.close();
         console.error('Error guardando item:', error);
-        const errorMsg = error.response?.data?.error || 'Error de conexión';
+
+        const errorMsg = error.response?.data?.error ||
+            error.message ||
+            'Error de conexión';
+
         showError(errorMsg);
     }
 });
@@ -310,6 +634,13 @@ async function activateItem(entry) {
 // Cerrar modal
 function closeModal() {
     document.getElementById('item-modal').classList.add('hidden');
+
+    // Limpiar tooltip variables
+    currentEditingEntry = null;
+    currentTooltipFilename = null;
+
+    // Resetear input file
+    resetFileInput();
 }
 
 // Mostrar/ocultar loading

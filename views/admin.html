@@ -401,18 +401,76 @@
                         </div>
                     </div>
 
-                    <!-- Tooltip Image -->
+                    <!-- Tooltip Image Upload -->
                     <div>
                         <label class="block text-yellow-400 mb-2 font-bold">
                             <i class="fas fa-image mr-2"></i>Imagen del Tooltip
                         </label>
-                        <input type="text" id="item-tooltip-image" name="tooltip_image"
-                            class="input-epic w-full px-4 py-3 rounded-lg focus:outline-none"
-                            placeholder="Ej: 12345.png (dejar vacío para auto-generar)">
-                        <p class="text-gray-400 text-sm mt-1">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Nombre del archivo PNG en /public/tooltips/
-                        </p>
+
+                        <!-- Preview de imagen actual -->
+                        <div id="tooltip-preview-container" class="mb-4 hidden">
+                            <div
+                                class="flex items-center space-x-4 p-3 bg-gray-800/50 rounded-lg border border-yellow-700/30">
+                                <img id="current-tooltip-preview" src="" alt="Preview"
+                                    class="w-16 h-16 object-cover rounded border border-yellow-500/50">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium" id="current-filename"></p>
+                                    <p class="text-xs text-gray-400" id="current-filesize"></p>
+                                </div>
+                                <button type="button" onclick="removeTooltipImage()"
+                                    class="text-red-400 hover:text-red-300">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Input de archivo (oculto) -->
+                        <input type="file" id="tooltip-image-file" accept=".jpg,.jpeg,.png,.bmp" class="hidden">
+
+                        <!-- Controles -->
+                        <div class="space-y-3">
+                            <button type="button" id="upload-tooltip-btn" onclick="openTooltipFileSelector()"
+                                class="btn-epic w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900">
+                                <i class="fas fa-upload mr-2"></i>
+                                <span id="upload-btn-text">Subir Imagen</span>
+                            </button>
+
+                            <!-- Información -->
+                            <div class="text-sm space-y-1">
+                                <p class="text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Formatos: JPG, PNG, BMP (Máx. 5MB)
+                                </p>
+                                <p class="text-yellow-400 font-mono text-xs">
+                                    Se renombrará automáticamente a: <span id="expected-filename">[entry].[ext]</span>
+                                </p>
+                            </div>
+
+                            <!-- Mensajes de error/éxito -->
+                            <div id="tooltip-messages" class="space-y-2">
+                                <div id="tooltip-error" class="text-red-400 text-sm hidden">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    <span id="tooltip-error-text"></span>
+                                </div>
+                                <div id="tooltip-success" class="text-green-400 text-sm hidden">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    <span id="tooltip-success-text"></span>
+                                </div>
+                            </div>
+
+                            <!-- Progress bar -->
+                            <div id="upload-progress" class="hidden">
+                                <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                    <span>Subiendo...</span>
+                                    <span id="upload-percent">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div id="upload-progress-bar"
+                                        class="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                        style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Costo en Tokens -->

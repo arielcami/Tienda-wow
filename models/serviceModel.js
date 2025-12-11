@@ -215,7 +215,7 @@ class ServiceModel {
                     break;
 
                 case 'unstuck': // TESTED: OK
-                    updateQuery = 'UPDATE characters SET map = 1, position_x = -7129.0693, position_y = -3789.144, position_z = 8.369192, orientation = 5.9766 WHERE guid = ?';
+                    updateQuery = 'UPDATE characters SET map = 1, position_x = -7129.0693, position_y = -3789.144, position_z = 8.369192, orientation = 5.9766, zone = 440 WHERE guid = ?';
                     updateParams = [characterGuid];
                     break;
 
