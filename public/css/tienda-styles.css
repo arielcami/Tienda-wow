@@ -1,0 +1,545 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=MedievalSharp&display=swap');
+
+:root {
+    --gold-primary: #ffd700;
+    --gold-secondary: #b8860b;
+    --epic-purple: #a335ee;
+    --rare-blue: #0070dd;
+    --common-gray: #9d9d9d;
+    --wow-dark: #1a1a1a;
+    --wow-darker: #0d0d0d;
+}
+
+body {
+    font-family: 'Cinzel', serif;
+    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #2d2d2d 100%);
+    min-height: 100vh;
+}
+
+.wow-gold {
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.wow-epic {
+    color: var(--epic-purple);
+    text-shadow: 0 0 10px rgba(163, 53, 238, 0.5);
+}
+
+.wow-rare {
+    color: var(--rare-blue);
+    text-shadow: 0 0 8px rgba(0, 112, 221, 0.4);
+}
+
+.wow-common {
+    color: var(--common-gray);
+}
+
+.border-gold {
+    border: 2px solid transparent;
+    background: linear-gradient(135deg, var(--wow-darker), var(--wow-darker)) padding-box,
+        linear-gradient(135deg, var(--gold-primary), var(--gold-secondary)) border-box;
+}
+
+.border-epic {
+    border: 2px solid transparent;
+    background: linear-gradient(135deg, var(--wow-darker), var(--wow-darker)) padding-box,
+        linear-gradient(135deg, var(--epic-purple), #6715a3) border-box;
+}
+
+.bg-wow-dark {
+    background: linear-gradient(135deg, var(--wow-darker) 0%, var(--wow-dark) 100%);
+}
+
+.bg-wow-panel {
+    background: rgba(13, 13, 13, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.item-card {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(45, 45, 45, 0.9) 100%);
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.item-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.item-card:hover::before {
+    opacity: 1;
+}
+
+.item-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
+    border-color: var(--gold-primary);
+}
+
+.btn-epic {
+    background: linear-gradient(135deg, var(--epic-purple), #6715a3);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(163, 53, 238, 0.3);
+}
+
+.btn-epic:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(163, 53, 238, 0.5);
+    background: linear-gradient(135deg, #b145f0, #7820c0);
+}
+
+.btn-gold {
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary));
+    color: #1a1a1a;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.btn-gold:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+    background: linear-gradient(135deg, #ffdf40, #d4af37);
+}
+
+.header-glow {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(184, 134, 11, 0.05) 100%);
+    border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.token-display {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(184, 134, 11, 0.05));
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+
+.section-title {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 2rem;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+}
+
+/* Estilos mejorados para SweetAlert */
+.swal2-popup {
+    background: linear-gradient(135deg, var(--wow-darker), var(--wow-dark)) !important;
+    border: 2px solid var(--gold-primary) !important;
+    border-radius: 12px !important;
+    font-family: 'Cinzel', serif !important;
+}
+
+.swal2-title {
+    color: var(--gold-primary) !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+}
+
+.swal2-html-container {
+    color: #d1d5db !important;
+    font-size: 1.1rem !important;
+}
+
+.swal2-confirm {
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary)) !important;
+    color: #1a1a1a !important;
+    border: none !important;
+    font-weight: 700 !important;
+    padding: 12px 24px !important;
+    border-radius: 8px !important;
+}
+
+.swal2-cancel {
+    background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+    color: white !important;
+    border: none !important;
+    font-weight: 700 !important;
+    padding: 12px 24px !important;
+    border-radius: 8px !important;
+}
+
+/* Estrellas de rating */
+.rating-stars {
+    display: flex;
+    gap: 2px;
+    justify-content: center;
+}
+
+.star {
+    color: #4b5563;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    font-size: 1.5rem;
+}
+
+.star.active {
+    color: #fbbf24;
+}
+
+.star:hover {
+    color: #fbbf24;
+}
+
+/* Estilos para iconos de items */
+.item-icon {
+    transition: transform 0.3s ease, filter 0.3s ease;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.item-card:hover .item-icon {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+    border-color: rgba(255, 215, 0, 0.5);
+}
+
+/* Navegación de categorías */
+.category-nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.category-btn {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9), rgba(45, 45, 45, 0.9));
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.category-btn:hover {
+    border-color: var(--gold-primary);
+    background: linear-gradient(135deg, rgba(32, 32, 32, 0.9), rgba(55, 55, 55, 0.9));
+    transform: translateY(-2px);
+}
+
+.category-btn.active {
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary));
+    color: #1a1a1a;
+    border-color: var(--gold-primary);
+    font-weight: 700;
+}
+
+/* Tooltip image styling */
+.tooltip-image {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    -webkit-touch-callout: none;
+}
+
+.item-card img {
+    user-select: none;
+    pointer-events: none;
+    -webkit-user-drag: none;
+}
+
+/* Estilos para fallback de iconos */
+.icon-fallback {
+    background: linear-gradient(135deg, #2d2d2d, #3d3d3d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Estilo para Heroic */
+.heroic-indicator {
+    color: #00FF00;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
+    font-weight: bold;
+    background: linear-gradient(90deg, rgba(0, 255, 0, 0.1), transparent);
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.heroic-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #00FF00;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(0, 255, 0, 0.8);
+}
+
+/* Contenedor de items */
+.items-container {
+    min-height: 300px;
+}
+
+/* Mensaje de carga */
+.loading-message {
+    text-align: center;
+    padding: 40px;
+    color: var(--common-gray);
+}
+
+.loading-spinner {
+    border: 3px solid rgba(255, 215, 0, 0.3);
+    border-top: 3px solid var(--gold-primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Modal simple */
+.simple-modal {
+    max-width: 800px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-tooltip-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+/* Estilos para el modal Mi Cuenta */
+.account-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.account-info-card {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9), rgba(45, 45, 45, 0.9));
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.account-info-card:hover {
+    border-color: rgba(255, 215, 0, 0.5);
+    transform: translateY(-2px);
+}
+
+.password-input {
+    background: rgba(13, 13, 13, 0.8);
+    border: 2px solid rgba(0, 112, 221, 0.3);
+    transition: all 0.3s ease;
+}
+
+.password-input:focus {
+    border-color: #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+.password-input.error {
+    border-color: #ff3333;
+    box-shadow: 0 0 10px rgba(255, 51, 51, 0.3);
+}
+
+/* Tooltip flotante para hover */
+.floating-tooltip {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out;
+    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.9));
+    max-width: 350px;
+    min-width: 200px;
+    transform: translate(0, 0);
+    animation: tooltip-appear 0.2s ease-out;
+}
+
+@keyframes tooltip-appear {
+    from {
+        opacity: 0;
+        transform: translate(10px, 10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+}
+
+.floating-tooltip.visible {
+    opacity: 1;
+}
+
+.floating-tooltip img {
+    border: 3px solid;
+    border-image: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary), var(--epic-purple)) 1;
+    border-radius: 10px;
+    max-width: 100%;
+    height: auto;
+    background: rgba(13, 13, 13, 0.95);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+/* Efecto de brillo en el borde del tooltip */
+.floating-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg,
+            var(--gold-primary) 0%,
+            var(--epic-purple) 50%,
+            var(--gold-secondary) 100%);
+    border-radius: 12px;
+    z-index: -1;
+    opacity: 0.7;
+    filter: blur(2px);
+}
+
+/* Para dispositivos móviles */
+@media (max-width: 768px) {
+    .floating-tooltip {
+        display: none !important;
+    }
+
+    .item-card:hover::after {
+        display: none;
+    }
+}
+
+/* Estilos para el modal con icono */
+.modal-tooltip-with-icon {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    max-width: 100%;
+}
+
+.modal-icon-container {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9), rgba(45, 45, 45, 0.9));
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-icon {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.modal-tooltip-image {
+    flex: 1;
+    max-width: calc(100% - 84px);
+}
+
+.modal-tooltip-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+/* Para dispositivos móviles */
+@media (max-width: 768px) {
+    .modal-tooltip-with-icon {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .modal-icon-container {
+        margin-bottom: 15px;
+    }
+
+    .modal-tooltip-image {
+        max-width: 100%;
+    }
+
+    .floating-tooltip {
+        display: none !important;
+        /* Ocultar tooltip flotante en móviles */
+    }
+}
+
+/* Cursor personalizado para items */
+.item-card {
+    cursor: pointer;
+    position: relative;
+}
+
+.item-card:hover::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border: 2px solid rgba(255, 215, 0, 0.5);
+    border-radius: 14px;
+    pointer-events: none;
+    z-index: 10;
+}

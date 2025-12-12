@@ -136,4 +136,27 @@ router.get('/user/tokens', requireAuth, async (req, res) => {
     }
 });
 
+// Obtener TODOS los items activos
+router.get('/all', requireAuth, async (req, res) => {
+    try {
+        const { limit = 100 } = req.query;
+
+        const items = await ItemModel.getAllItems(parseInt(limit));
+
+        res.json({
+            success: true,
+            category: 'Todos',
+            items: items,
+            count: items.length
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo todos los items:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+});
+
 export default router;

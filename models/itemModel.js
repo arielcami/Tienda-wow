@@ -55,6 +55,65 @@ class ItemModel {
         }
     }
 
+    // Obtener TODOS los items activos
+    static async getAllItems(limit = 100) {
+        try {
+            const limitNumber = parseInt(limit);
+            const validLimit = isNaN(limitNumber) || limitNumber <= 0 ? 100 : limitNumber;
+
+            const query = `
+            SELECT entry, name, icon_name, category, tooltip_image, 
+                   token_cost, times, stars, total_ratings, estado
+            FROM aa_store_items 
+            WHERE estado = 1
+            ORDER BY name
+            LIMIT ${validLimit}
+        `;
+
+            const [items] = await worldPool.execute(query);
+
+            const itemsWithIcons = await Promise.all(
+                items.map(async (item) => {
+                    let iconName = item.icon_name;
+
+                    if (!iconName || iconName.trim() === '' || iconName === 'inv_misc_questionmark.jpg') {
+                        iconName = await iconService.processItemIcon(item.entry, item.name);
+
+                        if (iconName && iconName !== 'inv_misc_questionmark.jpg') {
+                            await worldPool.execute(
+                                'UPDATE aa_store_items SET icon_name = ? WHERE entry = ?',
+                                [iconName, item.entry]
+                            );
+                        }
+                    }
+
+                    const iconUrl = iconService.getIconUrl(item.entry, iconName);
+
+                    return {
+                        entry: item.entry,
+                        name: item.name,
+                        icon_name: iconName || null,
+                        icon_url: iconUrl,
+                        category: item.category,
+                        tooltip_image: item.tooltip_image,
+                        token_cost: item.token_cost,
+                        times: item.times,
+                        stars: parseFloat(item.stars) || 0,
+                        total_ratings: item.total_ratings || 0,
+                        estado: item.estado
+                    };
+                })
+            );
+
+            return itemsWithIcons;
+
+        } catch (error) {
+            console.error('Error obteniendo todos los items:', error);
+            return [];
+        }
+    }
+
+
     // Buscar items por nombre (versión simplificada)
     static async searchItems(searchTerm, page = 1, limit = 20) {
         try {
