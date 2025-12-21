@@ -2,7 +2,6 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { parse } from 'node-html-parser';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -418,36 +417,6 @@ class IconService {
         return `/icons/${this.defaultIconName}`;
     }
 
-    /**
-     * Verifica si un icono existe localmente
-     * @param {number} itemId - ID del item
-     * @param {string} iconName - Nombre del icono (opcional)
-     * @returns {boolean}
-     */
-    iconExists(itemId, iconName = null) {
-        if (iconName) {
-            const iconPath = path.join(this.iconsDir, `${itemId}_${iconName}`);
-            return fs.existsSync(iconPath);
-        }
-
-        return this.findIconLocally(itemId) !== null;
-    }
-
-    /**
-     * Obtiene el nombre del icono por defecto
-     * @returns {string}
-     */
-    getDefaultIconName() {
-        return this.defaultIconName;
-    }
-
-    /**
-     * Limpia el caché de iconos
-     */
-    clearCache() {
-        this.iconCache.clear();
-        //console.log('Caché de iconos limpiado');
-    }
 }
 
 // Exportar una instancia única

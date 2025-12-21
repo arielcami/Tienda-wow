@@ -70,24 +70,16 @@ CREATE TABLE
         PRIMARY KEY (id)
     );
 
+DROP TABLE IF EXISTS aa_tienda_xp_ratings;
+
+CREATE TABLE aa_tienda_xp_ratings (
+    player_guid INT UNSIGNED PRIMARY KEY, 
+    xp_rate TINYINT UNSIGNED DEFAULT 1, 
+    player_name VARCHAR(25)
+);
+
 -- WORLD
 USE acore_world;
-
-DROP TABLE IF EXISTS aa_store_item_ratings;
-
-CREATE TABLE
-    aa_store_item_ratings (
-        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-        item_entry INT UNSIGNED NOT NULL,
-        account_id INT UNSIGNED NOT NULL,
-        character_guid INT UNSIGNED NOT NULL,
-        rating TINYINT UNSIGNED NOT NULL,
-        created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id),
-        UNIQUE KEY `unique_purchase_rating` (item_entry, account_id, character_guid),
-        KEY `idx_item_entry` (item_entry),
-        KEY `idx_account_id` (account_id)
-    );
 
 DROP TABLE IF EXISTS aa_store_items;
 
@@ -144,21 +136,7 @@ CREATE TABLE
         estado TINYINT (1) DEFAULT 1,
         PRIMARY KEY (entry)
     );
-    
-DROP TABLE IF EXISTS aa_tienda_purchases;
 
-CREATE TABLE
-    aa_tienda_purchases (
-        id INT UNSIGNED AUTO_INCREMENT,
-        playerId INT UNSIGNED NOT NULL,
-        playerName VARCHAR(30) NOT NULL,
-        purchase INT UNSIGNED NOT NULL,
-        amount TINYINT UNSIGNED NOT NULL DEFAULT 1,
-        estado TINYINT UNSIGNED DEFAULT 1,
-        rated TINYINT (1) DEFAULT 0,
-        created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id)
-    );
 
 DROP TABLE IF EXISTS aa_tienda_services;
 
@@ -181,15 +159,17 @@ CREATE TABLE aa_tienda_services (
 
 -- Servicios disponibles en la tienda:
 INSERT INTO aa_tienda_services (`name`, `description`, token_cost, service_type, category, at_login_flag, gold_amount, level_amount, required_level, max_level, is_active, `times`) VALUES 
-('Nivel 80', 'Si adquieres este servicio, subirás instantáneamente a nivel 80 con el personaje seleccionado.', 25, 'level_up', 'Nivel', 0, 0, 0, 1, 80, 1, 4),
-('500 de oro', 'Al adquirir este servicio, se te aumenta 500 a tu oro instantáneamente. (CUIDADO: No superar los 214, 000 de oro)', 15, 'gold', 'Oro', 0, 500, 0, 1, 80, 1, 1),
-('1000 de oro', 'Al adquirir este servicio, se te aumenta 1, 000 a tu oro instantáneamente. (CUIDADO: No superar los 214, 000 de oro)', 25, 'gold', 'Oro', 0, 1000, 0, 1, 80, 1, 1),
-('5000 de oro', 'Al adquirir este servicio, se te aumenta 5, 000 a tu oro instantáneamente. (CUIDADO: No superar los 214, 000 de oro)', 40, 'gold', 'Oro', 0, 5000, 0, 1, 80, 1, 1),
+('Nivel 80', 'Si adquieres este servicio, subirás instantáneamente a nivel 80 con el personaje seleccionado.', 20, 'level_up', 'Nivel', 0, 0, 0, 1, 80, 1, 0),
+('500 de oro', 'Al adquirir este servicio, se te aumenta 500 a tu oro instantáneamente. (CUIDADO: No superar los 214, 000 de oro)', 4, 'gold', 'Oro', 0, 500, 0, 1, 80, 1, 0),
+('1,000 de oro', 'Al adquirir este servicio, se te aumenta 1,000 a tu oro instantáneamente. (CUIDADO: No superar los 214, 000 de oro)', 8, 'gold', 'Oro', 0, 1000, 0, 1, 80, 1, 0),
+('5,000 de oro', 'Al adquirir este servicio, se te aumenta 5,000 a tu oro instantáneamente. (CUIDADO: No superar los 214, 000 de oro)', 35, 'gold', 'Oro', 0, 5000, 0, 1, 80, 1, 0),
+('25,000 de oro', 'Al adquirir este servicio, se te aumenta 25,000 a tu oro instantáneamente. (CUIDADO: No superar los 214, 000 de oro)', 150, 'gold', 'Oro', 0, 25000, 0, 1, 80, 1, 0),
 ('Cambio de nombre', 'Si compras este servicio, tu personaje contará con un cambio de nombre antes de logear.', 5, 'rename', 'Nombre', 1, 0, 0, 1, 80, 1, 1),
-('Cambio de apariencia', 'Al adquirir este servicio, podrás cambiar la apariencia física de tu personaje y también su nombre. Podrás hacerlo antes de entrar al mundo.', 10, 'customize', 'Cambiar apariencia', 8, 0, 0, 1, 80, 1, 3),
-('Cambio de facción', 'Al comprar este servicio, se te permite cambiar entre la Alianza y la Horda solo una vez. Incluye también un cambio de apariencia y de nombre.', 40, 'faction_change', 'Cambiar facción', 64, 0, 0, 1, 80, 1, 1),
-('Cambio de raza', 'Si adquieres este servicio, podrás cambiar la raza de tu personaje (Entre razas que comparten clase), también incluye un cambio de nombre.', 30, 'race_change', 'Cambiar raza', 128, 0, 0, 1, 80, 1, 1),
-('Desatascar', 'Si adquieres este servicio, se teletransportará tu personaje a Gadgetzán, Tanaris.', 5, 'unstuck', 'Desatascar', 0, 0, 0, 1, 80, 1, 2);
+('Cambio de apariencia', 'Al adquirir este servicio, podrás cambiar la apariencia física de tu personaje y también su nombre. Podrás hacerlo antes de entrar al mundo.', 10, 'customize', 'Cambiar apariencia', 8, 0, 0, 1, 80, 1, 0),
+('Cambio de facción', 'Al comprar este servicio, se te permite cambiar entre la Alianza y la Horda solo una vez. Incluye también un cambio de apariencia y de nombre.', 40, 'faction_change', 'Cambiar facción', 64, 0, 0, 1, 80, 1, 0),
+('Cambio de raza', 'Si adquieres este servicio, podrás cambiar la raza de tu personaje (Entre razas que comparten clase), también incluye un cambio de nombre.', 30, 'race_change', 'Cambiar raza', 128, 0, 0, 1, 80, 1, 0),
+('Desatascar', 'Si adquieres este servicio, se teletransportará tu personaje a Orgrimmar o Ventormenta, dependiendo de tu facción.', 1, 'unstuck', 'Desatascar', 0, 0, 0, 1, 80, 1, 0),
+('Aumentar XP Rate +1', 'Si compras este servicio, tu RATE de ganancia de XP aumentará + 1.', 2, 'xp_boost', 'XP Rate', 0, 0, 0, 1, 80, 1, 0);
 
 -- Algunos objetos para vender en la tienda:
 
@@ -201,23 +181,26 @@ INSERT INTO aa_store_items (entry, `name`, icon_name, category, tooltip_image, t
 (50730, 'Glorenzelg, alta hoja de la Mano de Plata', 'inv_sword_153.jpg', 'Espada de dos manos', '50730.png', 50,0, 0.00, 0, 1);
 
 
--- OPCIONAL: LIMPIEZA DE LOCALES QUE NO SE USAN:
-/*
-DELETE FROM achievement_reward_locale WHERE Locale NOT IN ('esMX');
-DELETE FROM broadcast_text_locale WHERE locale NOT IN ('esMX');
-DELETE FROM broadcast_text_locale WHERE locale NOT IN ('esMX');
-DELETE FROM creature_template_locale WHERE locale NOT IN ('esMX');
-DELETE FROM creature_text_locale WHERE Locale NOT IN ('esMX');
-DELETE FROM gameobject_template_locale WHERE locale NOT IN ('esMX');
-DELETE FROM gossip_menu_option_locale WHERE Locale NOT IN ('esMX');
-DELETE FROM item_set_names_locale WHERE locale NOT IN ('esMX');
-DELETE FROM item_template_locale WHERE locale NOT IN ('esMX');
-DELETE FROM npc_text_locale WHERE Locale NOT IN ('esMX');
-DELETE FROM page_text_locale WHERE locale NOT IN ('esMX');
-DELETE FROM pet_name_generation_locale WHERE Locale NOT IN ('esMX');
-DELETE FROM points_of_interest_locale WHERE locale NOT IN ('esMX');
-DELETE FROM quest_greeting_locale WHERE locale NOT IN ('esMX');
-DELETE FROM quest_offer_reward_locale WHERE locale NOT IN ('esMX');
-DELETE FROM quest_request_items_locale WHERE locale NOT IN ('esMX');
-DELETE FROM quest_template_locale WHERE locale NOT IN ('esMX');
-*/
+INSERT IGNORE INTO `creature_template` (
+`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`, `KillCredit1`, `KillCredit2`, 
+`name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`, `faction`, `npcflag`, `speed_walk`, 
+`speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `scale`, `rank`, `dmgschool`, `DamageModifier`, `BaseAttackTime`, `RangeAttackTime`, 
+`BaseVariance`, `RangeVariance`, `unit_class`, `unit_flags`, `unit_flags2`, `dynamicflags`, `family`, `trainer_type`, `trainer_spell`, `trainer_class`, 
+`trainer_race`, `type`, `type_flags`, `lootid`, `pickpocketloot`, `skinloot`, `PetSpellDataId`, `VehicleId`, `mingold`, `maxgold`, 
+`AIName`, `MovementType`, `HoverHeight`, `HealthModifier`, `ManaModifier`, `ArmorModifier`, `ExperienceModifier`, `RacialLeader`, `movementId`, `RegenHealth`, 
+`mechanic_immune_mask`, `spell_school_immune_mask`, `flags_extra`, `ScriptName`, `VerifiedBuild`) 
+VALUES 
+(60000,0,0,0,0,0,'Siobahn Sombraluz','|cff00c8ffStaff Wow One|r','',0,83,83,2,35,1,1.1,1.14286,1,1,20,1.1,3,0,1,2000,2000,1,1,8,0,0,0,0,0,0,0,0,7,4,0,0,0,0,0,0,0,'',0,1,350,350,1,1,0,0,1,0,0,0,'',12340),
+(60001,0,0,0,0,0,'El Sapo','|cff00c8ffVendedor Especial|r','',0,83,83,2,35,4224,1,1.14286,1,1,20,1.5,3,0,1,2000,2000,1,1,1,768,2048,0,0,0,0,0,0,7,4,0,0,0,0,0,0,0,'',0,1,1,1,1,1,0,0,1,0,0,0,'',12340),
+(60002,0,0,0,0,0,'Kikki Ricky','|cff00c8ffMaestro de Glifos|r','',0,83,83,2,35,1,1.1,1.14286,1,1,20,1.3,3,0,1,2000,2000,1,1,8,0,0,0,0,0,0,0,0,7,4,0,0,0,0,0,0,0,'',0,1,350,350,1,1,0,0,1,0,0,0,'',12340),
+(60003,0,0,0,0,0,'Michael Jackson','|cff00c8ffVendedor de objetos|r','',0,83,83,2,35,1,1.1,1.14286,1,1,20,1.1,3,0,1,2000,2000,1,1,8,0,0,0,0,0,0,0,0,7,4,0,0,0,0,0,0,0,'',0,1,350,350,1,1,0,0,1,0,0,0,'',12340);
+
+
+INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`, `VerifiedBuild`) VALUES
+(60000, 0, 21419, 1, 100, 12340),
+(60001, 0, 391, 1, 100, 12340),
+(60002, 0, 17806, 1, 100, 12340),
+(60003, 0, 16540, 1, 100, 12340);
+
+UPDATE item_template SET stackable = 2000, bonding = 1, quality = 4, description = "Lleva 20 de estos al vendedor para comprar 1 Token" 
+WHERE entry IN (4814, 3730, 5637, 10285, 8151, 12037, 24478, 43013);

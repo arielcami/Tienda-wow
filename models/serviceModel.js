@@ -168,6 +168,70 @@ class ServiceModel {
         }
     }
 
+    // IMPLEMENTAR ESTO
+    static async updatePlayerXpRate(characterGuid, connection = null) {
+        // Usamos la conexión de la transacción si viene, si no, usamos el pool normal
+        const db = connection || charactersPool;
+        
+        // La consulta usa ON DUPLICATE KEY para manejar el primer boost
+        const sql = `INSERT INTO aa_tienda_xp_ratings (player_guid, xp_rate) 
+            VALUES (?, 2) ON DUPLICATE KEY UPDATE xp_rate = xp_rate + 1`;
+
+        try {
+            const [result] = await db.execute(sql, [characterGuid]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error actualizando XP Rate:', error);
+            throw new Error('Error en la base de datos al modificar el XP Rate');
+        }
+    }
+
+    static async teleportPlayerToCapitalCity(characterGuid) {
+        const hordeRaces = [2, 5, 6, 8, 10];
+        /*
+        ORGRIMMAR: 	map = 1, position_x = 1641.95, position_y = -4409.32, position_z = 16.9521, orientation = 3.87042, zone = 1637;
+        VENTORMENTA: map = 0, position_x = -8849.38, position_y = 648.904, position_z = 96.4022, orientation = 5.41253, zone = 1519;
+        */
+        const playerRace = `SELECT race FROM characters WHERE guid = ?`;
+
+        // Comparar la raza del personaje para determinar la facción
+        try {
+            const [rows] = await charactersPool.execute(playerRace, [characterGuid]);
+
+            if (rows.length === 0) {
+                throw new Error('Personaje no encontrado');
+            }
+
+            const race = rows[0].race;
+
+            let teleportQuery = '';
+            let teleportParams = [];
+            let city;
+
+            if (hordeRaces.includes(race)) {
+                // Orgrimmar
+                teleportQuery = `UPDATE characters SET map = 1, position_x = 1641.95, position_y = -4409.32, position_z = 16.9521, orientation = 3.87042, zone = 1637 WHERE guid = ?`;
+                teleportParams = [characterGuid];
+                city = 'Orgrimmar';
+            } else {
+                // Ventormenta
+                teleportQuery = `UPDATE characters SET map = 0, position_x = -8849.38, position_y = 648.904, position_z = 96.4022, orientation = 5.41253, zone = 1519 WHERE guid = ?`;
+                teleportParams = [characterGuid];
+                city = 'Ventormenta';
+            }
+
+            const [result] = await charactersPool.execute(teleportQuery, teleportParams);
+            
+            if (result.affectedRows === 0) {
+                throw new Error('No se pudo teletransportar al personaje a la ciudad principal');
+            }
+            return { success: true, message: 'El personaje ha sido teletransportado a ' + city + '. Ya puedes entrar al juego.'};
+        } catch (error) {
+            console.error('Error teletransportando al personaje a la ciudad principal:', error);
+            throw error;
+        }
+    }
+
     static async applyService(characterGuid, service, characterName) {
         const connection = await charactersPool.getConnection();
 
@@ -215,8 +279,11 @@ class ServiceModel {
                     break;
 
                 case 'unstuck': // TESTED: OK
-                    updateQuery = 'UPDATE characters SET map = 1, position_x = -7129.0693, position_y = -3789.144, position_z = 8.369192, orientation = 5.9766, zone = 440 WHERE guid = ?';
-                    updateParams = [characterGuid];
+                    await this.teleportPlayerToCapitalCity(characterGuid);
+                    break;
+
+                case 'xp_boost': // NOT TESTED
+                    await this.updatePlayerXpRate(characterGuid, connection);
                     break;
 
                 default:
