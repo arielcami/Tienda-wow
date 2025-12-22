@@ -26,7 +26,7 @@ router.get('/login', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Tienda WoW</title>
+    <title>Login - Wow One</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -209,7 +209,7 @@ router.get('/login', (req, res) => {
             <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-yellow-600 to-yellow-800 rounded-full mb-4 border-4 border-yellow-400">
                 <i class="fas fa-crown text-3xl text-white"></i>
             </div>
-            <h1 class="text-4xl font-bold wow-gold mb-2">TIENDA WOW</h1>
+            <h1 class="text-4xl font-bold wow-gold mb-2">Wow One - Login</h1>
             <p class="text-gray-400" style="font-family: 'MedievalSharp', cursive;">AzerothCore 3.3.5a</p>
         </div>
 
@@ -247,7 +247,7 @@ router.get('/login', (req, res) => {
 
             <!-- Botón de Login -->
             <button type="submit" class="btn-epic w-full py-4 text-lg">
-                <i class="fas fa-dragon mr-2"></i>ENTRAR A TIENDA
+                <i class="fas fa-dragon mr-2"></i>INGRESAR
             </button>
         </form>
 
@@ -272,8 +272,8 @@ router.get('/login', (req, res) => {
             const usernameInput = document.getElementById('username');
             const passwordInput = document.getElementById('password');
             
-            let usernamePlaceholders = ['Thrall', 'Jaina', 'Arthas', 'Sylvanas', 'Illidan'];
-            let passwordPlaceholders = ['••••••••', 'contraseña épica', 'secreto ancestral'];
+            let usernamePlaceholders = ['Thrall', 'Jaina', 'Arthas', 'Sylvanas', 'Illidan', 'Terenas', 'Muradin', 'Sindragosa'];
+            let passwordPlaceholders = ['••••••••', 'contraseña épica', 'secreto ancestral', '***********'];
             
             let currentUserIndex = 0;
             let currentPassIndex = 0;

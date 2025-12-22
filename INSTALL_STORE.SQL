@@ -1,5 +1,5 @@
 -- AUTH
-USE acore_auth;
+USE one_wow_authentication;
 
 DROP TABLE IF EXISTS aa_tienda_login;
 
@@ -12,7 +12,7 @@ CREATE TABLE
     );
 
 -- CHARACTERS
-USE acore_characters;
+USE one_wow_characters;
 
 DROP TABLE IF EXISTS aa_store_item_ratings;
 
@@ -79,7 +79,7 @@ CREATE TABLE aa_tienda_xp_ratings (
 );
 
 -- WORLD
-USE acore_world;
+USE one_wow_world;
 
 DROP TABLE IF EXISTS aa_store_items;
 

@@ -43,7 +43,7 @@ const requireAuth = (req, res, next) => {
     }
 };
 
-// Middleware para verificar admin (ID 1)
+// Middleware para verificar admin
 const requireAdmin = async (req, res, next) => {
     try {
         if (!req.session.user || !req.session.user.username) {
@@ -132,7 +132,6 @@ app.get('/admin', requireAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'views/admin.html'));
 });
 
-// En app.js, después de app.get('/api/user', ...)
 app.get('/api/admin/check', requireAuth, async (req, res) => {
     try {
         const username = req.session.user.username;
