@@ -173,61 +173,33 @@ INSERT INTO aa_tienda_services (`name`, `description`, token_cost, service_type,
 
 -- Algunos objetos para vender en la tienda:
 INSERT INTO aa_store_items (entry, `name`, icon_name, category, tooltip_image, token_cost, `times`, stars, total_ratings, estado) VALUES 
-
--- Guerrero Furia - Paladín Retribución - DK Profano
-(45516, "Voldrethar, la hoja oscura de olvido", NULL, 'Espada de dos manos', NULL, 30, 0, 0.00, 0, 1),
-
--- Guerrero Protección - Paladín Protección - DK Escarcha
-(45442, "Sorthalis, martillo de los vigías", NULL, 'Maza', NULL, 15, 0, 0.00, 0, 1),
-
--- Paladín Sagrado - Druida Restauración - Sacerdote Sagrado - Chamán Restauración
-(45612, "Constellus", NULL, 'Maza', NULL, 15, 0, 0.00, 0, 1),
-
--- Cazador Puntería - Pícaro - Guerrero
-(45570, "Ballesta cieloforja", NULL, 'Ballesta', NULL, 15, 0, 0.00, 0, 1),
-
--- Cazador Puntería - Druida Feral
-(45613, "Vinculasueños", NULL, 'Bastón', NULL, 30, 0, 0.00, 0, 1),
-
--- Pícaro - Cazador
-(45448, "Mordedura azarosa", NULL, 'Daga', NULL, 15, 0, 0.00, 0, 1),
-(45296, "Hojas giratorias", NULL, 'Arma arrojadiza', NULL, 15, 0, 0.00, 0, 1),
-
--- Sacerdote Disciplina/Sombra - Chamán Elemental - Mago - Brujo - Druida Equilibrio
-(45620, "Filo de fragmento estelar", NULL, 'Daga', NULL, 15, 0, 0.00, 0, 1),    --> Crítico y golpe
-(45527, "Escriba de almas", NULL, 'Daga', NULL, 15, 0, 0.00, 0, 1),             --> Crítico y Celeridad
-(45617, "Cosmos", NULL, 'Sostén en mano izquierda', NULL, 15, 0, 0.00, 0, 1),   --> Crítico y golpe
-(50309, "Corazón marchito", NULL, 'Sostén en mano izquierda', NULL, 15, 0, 0.00, 0, 1), --> Crítico y Celeridad
-
--- Caballero de la Muerte Sangre/Escarcha - Chamán Mejora - Pícaro 
-(50303, "Carámbano negro", NULL, 'Maza', NULL, 15, 0, 0.00, 0, 1),
-
--- Chamán Mejora
-(45489, "Puño de la locura", NULL, 'Arma de puño', NULL, 15, 0, 0.00, 0, 1),
-(45315, "Creapiedras", NULL, 'Maza', NULL, 15, 0, 0.00, 0, 1),
-
--- Mago - Brujo - Druida Equilibrio - Sacerdote Disciplina/Sombras
-(45234, "Éxtasis", NULL, 'Bastón', NULL, 30, 0, 0.00, 0, 1),
-(45990, "Hoja de fusión", NULL, 'Espada', NULL, 15, 0, 0.00, 0, 1),
-
--- Monturas Voladoras
-(32458, "Cenizas de A'lar", 'inv_misc_summerfest_brazierorange.jpg', 'Montura', '32458.png', 20, 0, 0.00, 0, 1),
-(45693, "Cabeza de Mimiron", 'inv_misc_enggizmos_03', 'Montura', '45693.png', 20, 0, 0.00, 0, 1),
-(54860, "Cohete de paseo X-53", NULL, 'Montura', NULL, 20, 0, 0.00, 0, 1),
-(50435, "Vermis de escarcha de Gladiador colérico", NULL, 'Montura', NULL, 20, 0, 0.00, 0, 1),
-
--- Terrestres
-(33225, "Riendas del tigre espectral presto", NULL, 'Montura', NULL, 15, 0, 0.00, 0, 1),
-(19902, "Tigre Zulian presto", NULL, 'Montura', NULL, 15, 0, 0.00, 0, 1),
-(32768, "Riendas del Lord Cuervo", NULL, 'Montura', NULL, 15, 0, 0.00, 0, 1),
-(33809, "Oso de guerra Amani", NULL, 'Montura', NULL, 15, 0, 0.00, 0, 1),
-(54811, "Corcel celestial", NULL, 'Montura', NULL, 25, 0, 0.00, 0, 1),
-
--- Inventario
-(23162, "Foror's Crate of Endless Resist Gear Storage", NULL, 'Bolsa', NULL, 35, 0, 0.00, 0, 1),
-(51809, "Agujero portátil", NULL, 'Bolsa', NULL, 15, 0, 0.00, 0, 1);
-
-
+(19902, 'Tigre Zulian presto', 'ability_mount_jungletiger.jpg', 'Montura', '19902.png', 15, 0, 0.00, 0, 1), 
+(23162, "Foror's Crate of Endless Resist Gear Storage", 'inv_crate_04.jpg', 'Bolsa', '23162.png', 35, 0, 0.00, 0, 1), 
+(32458, "Cenizas de A'lar", 'inv_misc_summerfest_brazierorange.jpg', 'Montura', '32458.png', 20, 0, 0.00, 0, 1), 
+(32768, 'Riendas del Lord Cuervo', 'inv-mount_raven_54.jpg', 'Montura', '32768.png', 15, 0, 0.00, 0, 1), 
+(33225, 'Riendas del tigre espectral presto', 'ability_mount_spectraltiger.jpg', 'Montura', '33225.png', 15, 0, 0.00, 0, 1), 
+(33809, 'Oso de guerra Amani', 'ability_druid_challangingroar.jpg', 'Montura', '33809.png', 15, 0, 0.00, 0, 1), 
+(45234, 'Éxtasis', 'inv_staff_93.jpg', 'Bastón', '45234.png', 30, 0, 0.00, 0, 1), 
+(45296, 'Hojas giratorias', 'inv_throwingknife_08.jpg', 'Arma arrojadiza', '45296.png', 15, 0, 0.00, 0, 1), 
+(45315, 'Creapiedras', 'inv_mace_90.jpg', 'Maza', '45315.png', 15, 0, 0.00, 0, 1), 
+(45442, 'Sorthalis,  martillo de los vigías', 'inv_mace_91.jpg', 'Maza', '45442.png', 15, 0, 0.00, 0, 1), 
+(45448, 'Mordedura azarosa', 'inv_weapon_shortblade_77.jpg', 'Daga', '45448.png', 15, 0, 0.00, 0, 1), 
+(45489, 'Puño de la locura', 'inv_weapon_hand_23.jpg', 'Arma de puño', '45489.png', 15, 0, 0.00, 0, 1), 
+(45516, 'Voldrethar,  la hoja oscura de olvido', 'inv_sword_136.jpg', 'Espada de dos manos', '45516.png', 30, 0, 0.00, 0, 1), 
+(45527, 'Escriba de almas', 'inv_weapon_shortblade_80.jpg', 'Daga', '45527.png', 15, 0, 0.00, 0, 1), 
+(45570, 'Ballesta cieloforja', 'inv_weapon_crossbow_33.jpg', 'Ballesta', '45570.png', 15, 0, 0.00, 0, 1), 
+(45612, 'Constellus', 'inv_mace_92.jpg', 'Maza', '45612.png', 15, 0, 0.00, 0, 1), 
+(45613, 'Vinculasueños', 'inv_staff_93.jpg', 'Bastón', '45613.png', 30, 0, 0.00, 0, 1), 
+(45617, 'Cosmos', 'inv_offhand_ulduarraid_d_03.jpg', 'Sostén en mano izquierda', '45617.png', 15, 0, 0.00, 0, 1), 
+(45620, 'Filo de fragmento estelar', 'inv_weapon_shortblade_92.jpg', 'Daga', '45620.png', 15, 0, 0.00, 0, 1), 
+(45693, 'Cabeza de Mimiron', 'inv_misc_enggizmos_03', 'Montura', '45693.png', 20, 0, 0.00, 0, 1), 
+(45990, 'Hoja de fusión', 'inv_sword_132.jpg', 'Espada', '45990.png', 15, 0, 0.00, 0, 1), 
+(50303, 'Carámbano negro', 'inv_mace_78.jpg', 'Maza', '50303.png', 15, 0, 0.00, 0, 1), 
+(50309, 'Corazón marchito', 'inv_ore_feliron_01.jpg', 'Sostén en mano izquierda', '50309.png', 15, 0, 0.00, 0, 1), 
+(50435, 'Vermis de escarcha de Gladiador colérico', 'ability_mount_redfrostwyrm_01.jpg', 'Montura', '50435.png', 20, 0, 0.00, 0, 1), 
+(51809, 'Agujero portátil', 'inv_misc_shadowegg.jpg', 'Bolsa', '51809.png', 15, 0, 0.00, 0, 1), 
+(54811, 'Corcel celestial', 'ability_mount_celestialhorse.jpg', 'Montura', '54811.png', 25, 0, 0.00, 0, 1), 
+(54860, 'Cohete de paseo X-53', 'ability_mount_rocketmount2.jpg', 'Montura', '54860.png', 20, 0, 0.00, 0, 1);
 
 INSERT IGNORE INTO `creature_template` (
 `entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`, `KillCredit1`, `KillCredit2`, 
