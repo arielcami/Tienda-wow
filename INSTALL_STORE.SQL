@@ -172,13 +172,61 @@ INSERT INTO aa_tienda_services (`name`, `description`, token_cost, service_type,
 ('Aumentar XP Rate +1', 'Si compras este servicio, tu RATE de ganancia de XP aumentará + 1.', 2, 'xp_boost', 'XP Rate', 0, 0, 0, 1, 80, 1, 0);
 
 -- Algunos objetos para vender en la tienda:
-
 INSERT INTO aa_store_items (entry, `name`, icon_name, category, tooltip_image, token_cost, `times`, stars, total_ratings, estado) VALUES 
-(23162, "Foror's Crate of Endless Resist Gear Storage", 'inv_crate_04.jpg', 'Bolsa', '23162.png', 35, 0, 0.00, 0, 1),
-(32458, "Cenizas de A'lar", 'inv_misc_summerfest_brazierorange.jpg', 'Montura', '32458.png', 25, 0, 0.00, 0, 1),
-(45693, 'Cabeza de Mimiron','inv_misc_enggizmos_03.jpg','Montura', '45693.png', 30, 0, 0.00, 0, 1),
-(49623, 'Agonía de sombras','inv_axe_113.jpg','Hacha de dos manos', '49623.png', 80,0, 0.00, 0, 1),
-(50730, 'Glorenzelg, alta hoja de la Mano de Plata', 'inv_sword_153.jpg', 'Espada de dos manos', '50730.png', 50,0, 0.00, 0, 1);
+
+-- Guerrero Furia - Paladín Retribución - DK Profano
+(45516, "Voldrethar, la hoja oscura de olvido", NULL, 'Espada de dos manos', NULL, 30, 0, 0.00, 0, 1),
+
+-- Guerrero Protección - Paladín Protección - DK Escarcha
+(45442, "Sorthalis, martillo de los vigías", NULL, 'Maza', NULL, 15, 0, 0.00, 0, 1),
+
+-- Paladín Sagrado - Druida Restauración - Sacerdote Sagrado - Chamán Restauración
+(45612, "Constellus", NULL, 'Maza', NULL, 15, 0, 0.00, 0, 1),
+
+-- Cazador Puntería - Pícaro - Guerrero
+(45570, "Ballesta cieloforja", NULL, 'Ballesta', NULL, 15, 0, 0.00, 0, 1),
+
+-- Cazador Puntería - Druida Feral
+(45613, "Vinculasueños", NULL, 'Bastón', NULL, 30, 0, 0.00, 0, 1),
+
+-- Pícaro - Cazador
+(45448, "Mordedura azarosa", NULL, 'Daga', NULL, 15, 0, 0.00, 0, 1),
+(45296, "Hojas giratorias", NULL, 'Arma arrojadiza', NULL, 15, 0, 0.00, 0, 1),
+
+-- Sacerdote Disciplina/Sombra - Chamán Elemental - Mago - Brujo - Druida Equilibrio
+(45620, "Filo de fragmento estelar", NULL, 'Daga', NULL, 15, 0, 0.00, 0, 1),    --> Crítico y golpe
+(45527, "Escriba de almas", NULL, 'Daga', NULL, 15, 0, 0.00, 0, 1),             --> Crítico y Celeridad
+(45617, "Cosmos", NULL, 'Sostén en mano izquierda', NULL, 15, 0, 0.00, 0, 1),   --> Crítico y golpe
+(50309, "Corazón marchito", NULL, 'Sostén en mano izquierda', NULL, 15, 0, 0.00, 0, 1), --> Crítico y Celeridad
+
+-- Caballero de la Muerte Sangre/Escarcha - Chamán Mejora - Pícaro 
+(50303, "Carámbano negro", NULL, 'Maza', NULL, 15, 0, 0.00, 0, 1),
+
+-- Chamán Mejora
+(45489, "Puño de la locura", NULL, 'Arma de puño', NULL, 15, 0, 0.00, 0, 1),
+(45315, "Creapiedras", NULL, 'Maza', NULL, 15, 0, 0.00, 0, 1),
+
+-- Mago - Brujo - Druida Equilibrio - Sacerdote Disciplina/Sombras
+(45234, "Éxtasis", NULL, 'Bastón', NULL, 30, 0, 0.00, 0, 1),
+(45990, "Hoja de fusión", NULL, 'Espada', NULL, 15, 0, 0.00, 0, 1),
+
+-- Monturas Voladoras
+(32458, "Cenizas de A'lar", 'inv_misc_summerfest_brazierorange.jpg', 'Montura', '32458.png', 20, 0, 0.00, 0, 1),
+(45693, "Cabeza de Mimiron", 'inv_misc_enggizmos_03', 'Montura', '45693.png', 20, 0, 0.00, 0, 1),
+(54860, "Cohete de paseo X-53", NULL, 'Montura', NULL, 20, 0, 0.00, 0, 1),
+(50435, "Vermis de escarcha de Gladiador colérico", NULL, 'Montura', NULL, 20, 0, 0.00, 0, 1),
+
+-- Terrestres
+(33225, "Riendas del tigre espectral presto", NULL, 'Montura', NULL, 15, 0, 0.00, 0, 1),
+(19902, "Tigre Zulian presto", NULL, 'Montura', NULL, 15, 0, 0.00, 0, 1),
+(32768, "Riendas del Lord Cuervo", NULL, 'Montura', NULL, 15, 0, 0.00, 0, 1),
+(33809, "Oso de guerra Amani", NULL, 'Montura', NULL, 15, 0, 0.00, 0, 1),
+(54811, "Corcel celestial", NULL, 'Montura', NULL, 25, 0, 0.00, 0, 1),
+
+-- Inventario
+(23162, "Foror's Crate of Endless Resist Gear Storage", NULL, 'Bolsa', NULL, 35, 0, 0.00, 0, 1),
+(51809, "Agujero portátil", NULL, 'Bolsa', NULL, 15, 0, 0.00, 0, 1);
+
 
 
 INSERT IGNORE INTO `creature_template` (
@@ -202,5 +250,5 @@ INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`,
 (60002, 0, 17806, 1, 100, 12340),
 (60003, 0, 16540, 1, 100, 12340);
 
-UPDATE item_template SET stackable = 2000, bonding = 1, quality = 4, description = "Lleva 20 de estos al vendedor para comprar 1 Token" 
+UPDATE item_template SET stackable = 2000, bonding = 1, quality = 4, SellPrice = 0, description = "Reune 20 unidades y llévalos a Siobahn Sombraluz para comprar 1 Token." 
 WHERE entry IN (4814, 3730, 5637, 10285, 8151, 12037, 24478, 43013);

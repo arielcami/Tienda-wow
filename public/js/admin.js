@@ -18,6 +18,17 @@ const VALID_CATEGORIES = [
     'Bastón',
     'Daga',
     'Arma de puño',
+    'Arco',
+    'Ballesta',
+    'Arma arrojadiza',
+    'Varita',
+    'Sostén en mano izquierda',
+    'Arma de fuego',
+    'Tótem',
+    'Tratado',
+    'Sigilo',
+    'Ídolo',
+    'Camisa',
     'Armadura de tela',
     'Armadura de cuero',
     'Armadura de malla',
@@ -27,11 +38,15 @@ const VALID_CATEGORIES = [
     'Cuello',
     'Abalorio',
     'Capa',
+    'Tabardo',
     'Bolsa',
     'Gema',
-    'Encantamiento'
+    'Encantamiento',
+    'Montura',
+    'Mascota',
+    'Consumible',
+    'Receta'
 ];
-
 
 // Abrir selector de archivos
 function openTooltipFileSelector() {
