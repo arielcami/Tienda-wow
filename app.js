@@ -159,7 +159,7 @@ app.get('/test-db', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log('Servidor de tienda WoW ejecutándose en http://localhost:' + PORT);
     console.log('Rutas disponibles:');
     console.log('  • Login: http://localhost:' + PORT + '/auth/login');

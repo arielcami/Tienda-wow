@@ -461,11 +461,6 @@ class ServicesApp {
         Swal.fire({ title: 'Error', text: message, icon: 'error' });
     }
 
-    async logout() {
-        await axios.post('/auth/logout');
-        window.location.href = '/auth/login';
-    }
-
     setupEventListeners() {
         document.addEventListener('click', (event) => {
             const target = event.target;
@@ -475,6 +470,23 @@ class ServicesApp {
             if (target.closest('.close-character-modal')) this.closeCharacterSelect();
         });
     }
+}
+
+function logout() {
+    Swal.fire({
+        title: '¿Cerrar sesión?',
+        text: 'Estás seguro de que quieres salir de la tienda?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0068caff',
+        cancelButtonColor: '#e53e3e',
+        confirmButtonText: 'Sí, salir',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = '/auth/logout';
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => { window.servicesApp = new ServicesApp(); });

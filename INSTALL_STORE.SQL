@@ -172,34 +172,97 @@ INSERT INTO aa_tienda_services (`name`, `description`, token_cost, service_type,
 ('Aumentar XP Rate +1', 'Si compras este servicio, tu RATE de ganancia de XP aumentará + 1.', 2, 'xp_boost', 'XP Rate', 0, 0, 0, 1, 80, 1, 0);
 
 -- Algunos objetos para vender en la tienda:
-INSERT INTO aa_store_items (entry, `name`, icon_name, category, tooltip_image, token_cost, `times`, stars, total_ratings, estado) VALUES 
-(19902, 'Tigre Zulian presto', 'ability_mount_jungletiger.jpg', 'Montura', '19902.png', 15, 0, 0.00, 0, 1), 
-(23162, "Foror's Crate of Endless Resist Gear Storage", 'inv_crate_04.jpg', 'Bolsa', '23162.png', 35, 0, 0.00, 0, 1), 
-(32458, "Cenizas de A'lar", 'inv_misc_summerfest_brazierorange.jpg', 'Montura', '32458.png', 20, 0, 0.00, 0, 1), 
-(32768, 'Riendas del Lord Cuervo', 'inv-mount_raven_54.jpg', 'Montura', '32768.png', 15, 0, 0.00, 0, 1), 
-(33225, 'Riendas del tigre espectral presto', 'ability_mount_spectraltiger.jpg', 'Montura', '33225.png', 15, 0, 0.00, 0, 1), 
-(33809, 'Oso de guerra Amani', 'ability_druid_challangingroar.jpg', 'Montura', '33809.png', 15, 0, 0.00, 0, 1), 
-(45234, 'Éxtasis', 'inv_staff_93.jpg', 'Bastón', '45234.png', 30, 0, 0.00, 0, 1), 
-(45296, 'Hojas giratorias', 'inv_throwingknife_08.jpg', 'Arma arrojadiza', '45296.png', 15, 0, 0.00, 0, 1), 
-(45315, 'Creapiedras', 'inv_mace_90.jpg', 'Maza', '45315.png', 15, 0, 0.00, 0, 1), 
-(45442, 'Sorthalis,  martillo de los vigías', 'inv_mace_91.jpg', 'Maza', '45442.png', 15, 0, 0.00, 0, 1), 
-(45448, 'Mordedura azarosa', 'inv_weapon_shortblade_77.jpg', 'Daga', '45448.png', 15, 0, 0.00, 0, 1), 
-(45489, 'Puño de la locura', 'inv_weapon_hand_23.jpg', 'Arma de puño', '45489.png', 15, 0, 0.00, 0, 1), 
-(45516, 'Voldrethar,  la hoja oscura de olvido', 'inv_sword_136.jpg', 'Espada de dos manos', '45516.png', 30, 0, 0.00, 0, 1), 
-(45527, 'Escriba de almas', 'inv_weapon_shortblade_80.jpg', 'Daga', '45527.png', 15, 0, 0.00, 0, 1), 
-(45570, 'Ballesta cieloforja', 'inv_weapon_crossbow_33.jpg', 'Ballesta', '45570.png', 15, 0, 0.00, 0, 1), 
-(45612, 'Constellus', 'inv_mace_92.jpg', 'Maza', '45612.png', 15, 0, 0.00, 0, 1), 
-(45613, 'Vinculasueños', 'inv_staff_93.jpg', 'Bastón', '45613.png', 30, 0, 0.00, 0, 1), 
-(45617, 'Cosmos', 'inv_offhand_ulduarraid_d_03.jpg', 'Sostén en mano izquierda', '45617.png', 15, 0, 0.00, 0, 1), 
-(45620, 'Filo de fragmento estelar', 'inv_weapon_shortblade_92.jpg', 'Daga', '45620.png', 15, 0, 0.00, 0, 1), 
-(45693, 'Cabeza de Mimiron', 'inv_misc_enggizmos_03', 'Montura', '45693.png', 20, 0, 0.00, 0, 1), 
-(45990, 'Hoja de fusión', 'inv_sword_132.jpg', 'Espada', '45990.png', 15, 0, 0.00, 0, 1), 
-(50303, 'Carámbano negro', 'inv_mace_78.jpg', 'Maza', '50303.png', 15, 0, 0.00, 0, 1), 
-(50309, 'Corazón marchito', 'inv_ore_feliron_01.jpg', 'Sostén en mano izquierda', '50309.png', 15, 0, 0.00, 0, 1), 
-(50435, 'Vermis de escarcha de Gladiador colérico', 'ability_mount_redfrostwyrm_01.jpg', 'Montura', '50435.png', 20, 0, 0.00, 0, 1), 
+INSERT INTO aa_store_items (entry, `name`, icon_name, category, tooltip_image, token_cost, `times`, stars, total_ratings, estado) VALUES
+
+-- Monturas voladoras
+(32458, "Cenizas de A'lar", 'inv_misc_summerfest_brazierorange.jpg', 'Montura', '32458.png', 20, 0, 0.00, 0, 1),
+(45693, 'Cabeza de Mimiron', 'inv_misc_enggizmos_03', 'Montura', '45693.png', 20, 0, 0.00, 0, 1),
+(50435, 'Vermis de escarcha de Gladiador colérico', 'ability_mount_redfrostwyrm_01.jpg', 'Montura', '50435.png', 20, 0, 0.00, 0, 1),
+(54811, 'Corcel celestial', 'ability_mount_celestialhorse.jpg', 'Montura', '54811.png', 25, 0, 0.00, 0, 1), -- También es terrestre
+(54860, 'Cohete de paseo X-53', 'ability_mount_rocketmount2.jpg', 'Montura', '54860.png', 20, 0, 0.00, 0, 1), -- También es terrestre
+
+-- Monturas terrestres
+(19902, 'Tigre Zulian presto', 'ability_mount_jungletiger.jpg', 'Montura', '19902.png', 15, 0, 0.00, 0, 1),
+(32768, 'Riendas del Lord Cuervo', 'inv-mount_raven_54.jpg', 'Montura', '32768.png', 15, 0, 0.00, 0, 1),
+(33225, 'Riendas del tigre espectral presto', 'ability_mount_spectraltiger.jpg', 'Montura', '33225.png', 15, 0, 0.00, 0, 1),
+(33809, 'Oso de guerra Amani', 'ability_druid_challangingroar.jpg', 'Montura', '33809.png', 15, 0, 0.00, 0, 1),
+
+-- Bolsa
+(23162, "Foror's Crate of Endless Resist Gear Storage", 'inv_crate_04.jpg', 'Bolsa', '23162.png', 35, 0, 0.00, 0, 1),
 (51809, 'Agujero portátil', 'inv_misc_shadowegg.jpg', 'Bolsa', '51809.png', 15, 0, 0.00, 0, 1), 
-(54811, 'Corcel celestial', 'ability_mount_celestialhorse.jpg', 'Montura', '54811.png', 25, 0, 0.00, 0, 1), 
-(54860, 'Cohete de paseo X-53', 'ability_mount_rocketmount2.jpg', 'Montura', '54860.png', 20, 0, 0.00, 0, 1);
+
+-- Bastón
+(45234, 'Éxtasis', 'inv_staff_93.jpg', 'Bastón', '45234.png', 30, 0, 0.00, 0, 1),
+(45613, 'Vinculasueños', 'inv_staff_93.jpg', 'Bastón', '45613.png', 30, 0, 0.00, 0, 1),
+
+-- Arma arrojadiza
+(45296, 'Hojas giratorias', 'inv_throwingknife_08.jpg', 'Arma arrojadiza', '45296.png', 10, 0, 0.00, 0, 1), 
+
+-- Espada
+(45990, 'Hoja de fusión', 'inv_sword_132.jpg', 'Espada', '45990.png', 15, 0, 0.00, 0, 1), 
+
+-- Maza
+(45315, 'Creapiedras', 'inv_mace_90.jpg', 'Maza', '45315.png', 15, 0, 0.00, 0, 1), 
+(45442, 'Sorthalis, martillo de los vigías', 'inv_mace_91.jpg', 'Maza', '45442.png', 15, 0, 0.00, 0, 1), 
+(45612, 'Constellus', 'inv_mace_92.jpg', 'Maza', '45612.png', 15, 0, 0.00, 0, 1), 
+(50303, 'Carámbano negro', 'inv_mace_78.jpg', 'Maza', '50303.png', 15, 0, 0.00, 0, 1), 
+
+-- Daga
+(45448, 'Mordedura azarosa', 'inv_weapon_shortblade_77.jpg', 'Daga', '45448.png', 15, 0, 0.00, 0, 1),
+(45527, 'Escriba de almas', 'inv_weapon_shortblade_80.jpg', 'Daga', '45527.png', 15, 0, 0.00, 0, 1),
+(45620, 'Filo de fragmento estelar', 'inv_weapon_shortblade_92.jpg', 'Daga', '45620.png', 15, 0, 0.00, 0, 1),
+
+-- Arma de puño
+(45489, 'Puño de la locura', 'inv_weapon_hand_23.jpg', 'Arma de puño', '45489.png', 15, 0, 0.00, 0, 1),
+
+-- Espada de dos manos
+(45516, 'Voldrethar, la hoja oscura de olvido', 'inv_sword_136.jpg', 'Espada de dos manos', '45516.png', 30, 0, 0.00, 0, 1), 
+
+-- Ballesta
+(45570, 'Ballesta cieloforja', 'inv_weapon_crossbow_33.jpg', 'Ballesta', '45570.png', 15, 0, 0.00, 0, 1), 
+
+-- Escudo
+(45877, 'El Guardia Boreal', NULL, 'Escudo', NULL, 15, 0, 0.00, 0, 1), -- Tank
+(45887, 'Barrera de capas de hielo', NULL, 'Escudo', NULL, 15, 0, 0.00, 0, 1), -- Heal/Spell
+
+-- Abalorio
+(45518, 'Bengala de los cielos', NULL, 'Abalorio', NULL, 20, 0, 0.00, 0, 1),
+(45609, 'Estela del cometa', NULL, 'Abalorio', NULL, 20, 0, 0.00, 0, 1),
+(45535, 'Prueba de fe', NULL, 'Abalorio', NULL, 20, 0, 0.00, 0, 1),
+(45158, 'Corazón de hierro', NULL, 'Abalorio', NULL, 16, 0, 0.00, 0, 1),
+
+-- Varita
+(45170, 'Cetro de creación', NULL, 'Varita', NULL, 10, 0, 0.00, 0, 1),
+(45257, 'Varita de cristal de cuarzo', NULL, 'Varita', NULL, 10, 0, 0.00, 0, 1),
+(45511, 'Cetro de almas perdidas', NULL, 'Varita', NULL, 10, 0, 0.00, 0, 1),
+
+-- Anillo
+(50306, 'Promesa de la dama', NULL, 'Anillo', NULL, 15, 0, 0.00, 0, 1),
+(45106, 'Fuerza del autómata', NULL, 'Anillo', NULL, 15, 0, 0.00, 0, 1),
+(45112, 'El anillo del leviatán', NULL, 'Anillo', NULL, 15, 0, 0.00, 0, 1),
+(45247, 'Sello del tiemblatérrea', NULL, 'Anillo', NULL, 15, 0, 0.00, 0, 1),
+(45157, 'Anillo de fragmento cenizo', NULL, 'Anillo', NULL, 15, 0, 0.00, 0, 1),
+(45525, 'Sello de dios aterrador', NULL, 'Anillo', NULL, 15, 0, 0.00, 0, 1),
+(45495, 'Sello conductivo', NULL, 'Anillo', NULL, 15, 0, 0.00, 0, 1),
+(45614, 'Aro de brillo estelar', NULL, 'Anillo', NULL, 15, 0, 0.00, 0, 1),
+(45451, 'Anillo congelado', NULL, 'Anillo', NULL, 15, 0, 0.00, 0, 1),
+(45168, 'Círculo de piroluz', NULL, 'Anillo', NULL, 15, 0, 0.00, 0, 1),
+
+-- Cuello
+(45243, 'Amuleto de zafiros de renovación', NULL, 'Cuello', NULL, 15, 0, 0.00, 0, 1),
+(45133, 'Colgante del caos ígneo', NULL, 'Cuello', NULL, 15, 0, 0.00, 0, 1),
+(45945, 'Semilla de masacre en ciernes', NULL, 'Cuello', NULL, 15, 0, 0.00, 0, 1),
+(45517, 'Péndulo de infinidad', NULL, 'Cuello', NULL, 15, 0, 0.00, 0, 1),
+(45459, 'Fuerza de Hodir gélida', NULL, 'Cuello', NULL, 15, 0, 0.00, 0, 1),
+(46040, 'Fuerza de los cielos', NULL, 'Cuello', NULL, 15, 0, 0.00, 0, 1),
+(40387, 'Ambición sin límites', NULL, 'Cuello', NULL, 15, 0, 0.00, 0, 1),
+(45262, 'Collar de arrojo infalible', NULL, 'Cuello', NULL, 15, 0, 0.00, 0, 1),
+
+-- Sostener en mano izquierda
+(45617, 'Cosmos', 'inv_offhand_ulduarraid_d_03.jpg', 'Sostén en mano izquierda', '45617.png', 15, 0, 0.00, 0, 1),
+(50309, 'Corazón marchito', 'inv_ore_feliron_01.jpg', 'Sostén en mano izquierda', '50309.png', 15, 0, 0.00, 0, 1);
+ 
+
 
 INSERT IGNORE INTO `creature_template` (
 `entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`, `KillCredit1`, `KillCredit2`, 
