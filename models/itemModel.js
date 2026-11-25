@@ -353,7 +353,7 @@ class ItemModel {
             }
 
             const [characterStatus] = await charactersPool.execute(
-                'SELECT online FROM characters WHERE guid = ?',
+                'SELECT guid FROM characters WHERE guid = ?',
                 [characterGuid]
             );
 
@@ -361,9 +361,7 @@ class ItemModel {
                 throw new Error('Personaje no encontrado');
             }
 
-            if (characterStatus[0].online === 1) {
-                throw new Error('El personaje debe estar OFFLINE para recibir items por correo');
-            }
+            // Con SOAP el correo llega aunque el personaje esté conectado
 
             return {
                 success: true,
@@ -408,7 +406,7 @@ class ItemModel {
             const itemName = itemRows[0].name;
 
             const [characterStatus] = await connection.execute(
-                'SELECT online, name FROM characters WHERE guid = ? AND account = ?',
+                'SELECT name FROM characters WHERE guid = ? AND account = ?',
                 [characterGuid, accountId]
             );
 
@@ -416,9 +414,7 @@ class ItemModel {
                 throw new Error('Personaje no encontrado');
             }
 
-            if (characterStatus[0].online === 1) {
-                throw new Error('El personaje debe estar OFFLINE para recibir items por correo');
-            }
+            // Con SOAP el correo llega aunque el personaje esté conectado
 
             characterName = characterStatus[0].name;
 

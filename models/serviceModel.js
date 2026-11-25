@@ -1,6 +1,20 @@
 import database from '../config/database.js';
+import { executeCommand, sanitizeCommandText, safeCharacterName } from '../util/soapClient.js';
 
 const { charactersPool, worldPool } = database;
+
+// Servicios que se aplican con comandos de GM vía SOAP: el worldserver los ejecuta
+// al instante, así que funcionan aunque el personaje esté conectado.
+const SOAP_SERVICE_TYPES = ['level_up', 'gold', 'rename', 'customize', 'faction_change', 'race_change', 'unstuck'];
+
+// Servicios que se activan al volver a entrar con el personaje (flag at_login)
+const AT_LOGIN_SERVICE_TYPES = ['rename', 'customize', 'faction_change', 'race_change'];
+
+// Razas de la Horda: orco, no-muerto, tauren, trol, elfo de sangre
+const HORDE_RACES = [2, 5, 6, 8, 10];
+
+// Máximo de dinero en 3.3.5a: 2,147,483,647 de cobre (≈ 214,748 de oro)
+const MAX_MONEY_COPPER = 2147483647;
 
 class ServiceModel {
 
@@ -115,6 +129,113 @@ class ServiceModel {
         }
     }
 
+    // ¿Este servicio exige que el personaje esté desconectado?
+    // Los que van por SOAP los aplica el propio worldserver, así que funcionan online.
+    static requiresOffline(serviceType) {
+        return !SOAP_SERVICE_TYPES.includes(serviceType);
+    }
+
+    // ¿El personaje ya tiene pendiente este cambio (nombre, apariencia, facción, raza)?
+    // - Desconectado: basta con mirar el flag at_login en la BD.
+    // - Conectado: el worldserver guarda el flag en memoria y lo escribe en la BD más tarde,
+    //   así que también se revisa si ya se compró este servicio durante la sesión actual.
+    static async hasPendingAtLoginService(db, characterGuid, service) {
+        const flag = Number(service.at_login_flag) || 0;
+        if (flag === 0) return false;
+
+        const [rows] = await db.execute(
+            'SELECT at_login, online, logout_time FROM characters WHERE guid = ?',
+            [characterGuid]
+        );
+        if (rows.length === 0) {
+            throw new Error('Personaje no encontrado');
+        }
+
+        const row = rows[0];
+        if ((row.at_login & flag) !== 0) {
+            return true;
+        }
+
+        if (row.online === 1) {
+            const [purchases] = await db.execute(
+                `SELECT 1 FROM aa_tienda_service_purchases
+                 WHERE character_guid = ? AND service_id = ? AND status = 'completed'
+                   AND completed_at > FROM_UNIXTIME(?)
+                 LIMIT 1`,
+                [characterGuid, service.id, row.logout_time || 0]
+            );
+            return purchases.length > 0;
+        }
+
+        return false;
+    }
+
+    // Busca en game_tele la ciudad de destino para "Desatascar".
+    // Nombres configurables en .env: UNSTUCK_TELE_HORDE / UNSTUCK_TELE_ALLIANCE.
+    static async resolveUnstuckLocation(race) {
+        const isHorde = HORDE_RACES.includes(race);
+        const preferred = isHorde
+            ? (process.env.UNSTUCK_TELE_HORDE || 'Orgrimmar')
+            : (process.env.UNSTUCK_TELE_ALLIANCE || 'Stormwind');
+        const cityName = isHorde ? 'Orgrimmar' : 'Ventormenta';
+
+        let [rows] = await worldPool.execute(
+            'SELECT name FROM game_tele WHERE name = ? LIMIT 1',
+            [preferred]
+        );
+        if (rows.length === 0) {
+            [rows] = await worldPool.execute(
+                'SELECT name FROM game_tele WHERE name LIKE ? ORDER BY CHAR_LENGTH(name) LIMIT 1',
+                [`${preferred}%`]
+            );
+        }
+        if (rows.length === 0 || !/^[A-Za-z0-9_]+$/.test(rows[0].name)) {
+            console.error(`[Servicios] No existe la ubicación "${preferred}" en world.game_tele`);
+            throw new Error('El servicio Desatascar no está disponible en este momento. Contacta a un administrador.');
+        }
+
+        return { location: rows[0].name, cityName };
+    }
+
+    // Reglas comunes de validación (se usan al validar y otra vez al cobrar)
+    static async checkServicePreconditions(db, service, character) {
+        if (character.online === 1 && this.requiresOffline(service.service_type)) {
+            throw new Error('Este servicio requiere que el personaje esté OFFLINE');
+        }
+
+        if (character.level < service.required_level) {
+            throw new Error(`Nivel mínimo requerido: ${service.required_level}. Tu personaje es nivel ${character.level}`);
+        }
+
+        if (character.level > service.max_level) {
+            throw new Error(`Este servicio es para personajes hasta nivel ${service.max_level}. Tu personaje es nivel ${character.level}`);
+        }
+
+        if (service.service_type === 'level_up' && character.level >= 80) {
+            throw new Error('Tu personaje ya es nivel 80');
+        }
+
+        if (service.service_type === 'gold') {
+            if (service.gold_amount <= 0) {
+                throw new Error('Cantidad de oro no válida para este servicio');
+            }
+            const copper = service.gold_amount * 10000;
+            if (Number(character.money) + copper > MAX_MONEY_COPPER) {
+                throw new Error('Con este oro tu personaje superaría el límite del juego (214,748 de oro).');
+            }
+        }
+
+        if (AT_LOGIN_SERVICE_TYPES.includes(service.service_type)) {
+            if (await this.hasPendingAtLoginService(db, character.guid, service)) {
+                throw new Error('Este personaje ya tiene este servicio pendiente. Úsalo al entrar al juego antes de volver a comprarlo.');
+            }
+        }
+
+        if (service.service_type === 'unstuck') {
+            await this.resolveUnstuckLocation(character.race);
+        }
+    }
+
     static async validateServicePurchase(accountId, characterGuid, serviceId) {
         try {
             const userTokens = await this.getUserTokens(accountId);
@@ -129,29 +250,11 @@ class ServiceModel {
                 throw new Error('Personaje no encontrado o no pertenece a tu cuenta');
             }
 
-            if (character.online === 1) {
-                throw new Error('El personaje debe estar OFFLINE para aplicar servicios');
-            }
-
             if (userTokens < service.token_cost) {
                 throw new Error(`Tokens insuficientes. Necesitas ${service.token_cost} tokens, tienes ${userTokens}`);
             }
 
-            if (character.level < service.required_level) {
-                throw new Error(`Nivel mínimo requerido: ${service.required_level}. Tu personaje es nivel ${character.level}`);
-            }
-
-            if (character.level > service.max_level) {
-                throw new Error(`Este servicio es para personajes hasta nivel ${service.max_level}. Tu personaje es nivel ${character.level}`);
-            }
-
-            if (service.service_type === 'level_up' && character.level >= 80) {
-                throw new Error('Tu personaje ya es nivel 80');
-            }
-
-            if (service.service_type === 'gold' && service.gold_amount <= 0) {
-                throw new Error('Cantidad de oro no válida para este servicio');
-            }
+            await this.checkServicePreconditions(charactersPool, service, character);
 
             return {
                 success: true,
@@ -186,135 +289,81 @@ class ServiceModel {
         }
     }
 
-    static async teleportPlayerToCapitalCity(characterGuid, connection = null) {
-        const db = connection || charactersPool;
-        const hordeRaces = [2, 5, 6, 8, 10];
-        /*
-        ORGRIMMAR: 	map = 1, position_x = 1641.95, position_y = -4409.32, position_z = 16.9521, orientation = 3.87042, zone = 1637;
-        VENTORMENTA: map = 0, position_x = -8849.38, position_y = 648.904, position_z = 96.4022, orientation = 5.41253, zone = 1519;
-        */
-        const playerRace = `SELECT race FROM characters WHERE guid = ?`;
+    // Arma el comando de GM que aplica el servicio. Devuelve null para servicios que no usan SOAP.
+    static async buildServiceCommand(service, character) {
+        const name = safeCharacterName(character.name);
 
-        // Comparar la raza del personaje para determinar la facción
-        try {
-            const [rows] = await db.execute(playerRace, [characterGuid]);
+        switch (service.service_type) {
+            case 'level_up':
+                return { command: `.character level ${name} 80`, message: `${character.name} ahora es nivel 80.` };
 
-            if (rows.length === 0) {
-                throw new Error('Personaje no encontrado');
+            case 'gold': {
+                const gold = Number(service.gold_amount);
+                const copper = gold * 10000;
+                const subject = sanitizeCommandText(`Tienda: ${service.name}`);
+                const body = sanitizeCommandText(`Has recibido ${String(gold).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} de oro de la tienda. Gracias por tu compra.`);
+                return {
+                    command: `.send money ${name} "${subject}" "${body}" ${copper}`,
+                    message: 'El oro llegó al buzón de tu personaje.'
+                };
             }
 
-            const race = rows[0].race;
+            case 'rename':
+                return { command: `.character rename ${name}`, atLogin: true };
+            case 'customize':
+                return { command: `.character customize ${name}`, atLogin: true };
+            case 'faction_change':
+                return { command: `.character changefaction ${name}`, atLogin: true };
+            case 'race_change':
+                return { command: `.character changerace ${name}`, atLogin: true };
 
-            let teleportQuery = '';
-            let teleportParams = [];
-            let city;
-
-            if (hordeRaces.includes(race)) {
-                // Orgrimmar
-                teleportQuery = `UPDATE characters SET map = 1, position_x = 1641.95, position_y = -4409.32, position_z = 16.9521, orientation = 3.87042, zone = 1637 WHERE guid = ?`;
-                teleportParams = [characterGuid];
-                city = 'Orgrimmar';
-            } else {
-                // Ventormenta
-                teleportQuery = `UPDATE characters SET map = 0, position_x = -8849.38, position_y = 648.904, position_z = 96.4022, orientation = 5.41253, zone = 1519 WHERE guid = ?`;
-                teleportParams = [characterGuid];
-                city = 'Ventormenta';
+            case 'unstuck': {
+                const { location, cityName } = await this.resolveUnstuckLocation(character.race);
+                return {
+                    command: `.teleport name ${name} ${location}`,
+                    message: `${character.name} fue teletransportado a ${cityName}.`
+                };
             }
 
-            const [result] = await db.execute(teleportQuery, teleportParams);
-            
-            if (result.affectedRows === 0) {
-                throw new Error('No se pudo teletransportar al personaje a la ciudad principal');
-            }
-            return { success: true, message: 'El personaje ha sido teletransportado a ' + city + '. Ya puedes entrar al juego.'};
-        } catch (error) {
-            console.error('Error teletransportando al personaje a la ciudad principal:', error);
-            throw error;
+            default:
+                return null;
         }
     }
 
-    // Aplica el servicio usando la conexión y la transacción de quien lo llama
-    // (completeServicePurchase), para que cobro y servicio se confirmen o reviertan juntos.
-    static async applyService(connection, characterGuid, service, characterName) {
+    // Aplica el servicio dentro de la transacción de quien lo llama (completeServicePurchase).
+    // Orden: primero todo lo que es base de datos (se puede revertir) y al final el comando SOAP.
+    // Si el worldserver rechaza el comando, se lanza un error, el llamador hace rollback y los tokens vuelven.
+    static async applyService(connection, character, service) {
         try {
-            const [onlineRows] = await connection.execute(
-                'SELECT online FROM characters WHERE guid = ?',
-                [characterGuid]
-            );
-            if (onlineRows.length === 0 || onlineRows[0].online === 1) {
-                throw new Error('El personaje está online. No se puede aplicar el servicio.');
+            const characterGuid = character.guid;
+
+            if (this.requiresOffline(service.service_type)) {
+                const [onlineRows] = await connection.execute(
+                    'SELECT online FROM characters WHERE guid = ?',
+                    [characterGuid]
+                );
+                if (onlineRows.length === 0 || onlineRows[0].online === 1) {
+                    throw new Error('El personaje está online. No se puede aplicar el servicio.');
+                }
             }
 
-            let updateQuery = '';
-            let updateParams = [];
-            let pendingCheck = false;
+            const soap = await this.buildServiceCommand(service, character);
 
-            switch (service.service_type) {
-                case 'level_up': // TESTED: OK
-                    updateQuery = 'UPDATE characters SET level = 80, xp = 0 WHERE guid = ?';
-                    updateParams = [characterGuid];
-                    break;
-
-                case 'gold': // TESTED: OK
-                    const goldInCopper = service.gold_amount * 10000;
-                    updateQuery = 'UPDATE characters SET money = money + ? WHERE guid = ?';
-                    updateParams = [goldInCopper, characterGuid];
-                    break;
-
-                case 'rename': // TESTED: OK
-                    // OR de bits: comprar dos veces el mismo servicio no activa otro flag distinto
-                    updateQuery = 'UPDATE characters SET at_login = at_login | ? WHERE guid = ? AND (at_login & ?) = 0';
-                    updateParams = [service.at_login_flag, characterGuid, service.at_login_flag];
-                    pendingCheck = true;
-                    break;
-
-                case 'customize': // TESTED: OK
-                    // OR de bits: comprar dos veces el mismo servicio no activa otro flag distinto
-                    updateQuery = 'UPDATE characters SET at_login = at_login | ? WHERE guid = ? AND (at_login & ?) = 0';
-                    updateParams = [service.at_login_flag, characterGuid, service.at_login_flag];
-                    pendingCheck = true;
-                    break;
-
-                case 'faction_change': // TESTED: OK
-                    // OR de bits: comprar dos veces el mismo servicio no activa otro flag distinto
-                    updateQuery = 'UPDATE characters SET at_login = at_login | ? WHERE guid = ? AND (at_login & ?) = 0';
-                    updateParams = [service.at_login_flag, characterGuid, service.at_login_flag];
-                    pendingCheck = true;
-                    break;
-
-                case 'race_change': // TESTED: OK
-                    // OR de bits: comprar dos veces el mismo servicio no activa otro flag distinto
-                    updateQuery = 'UPDATE characters SET at_login = at_login | ? WHERE guid = ? AND (at_login & ?) = 0';
-                    updateParams = [service.at_login_flag, characterGuid, service.at_login_flag];
-                    pendingCheck = true;
-                    break;
-
-                case 'unstuck': // TESTED: OK
-                    await this.teleportPlayerToCapitalCity(characterGuid, connection);
-                    break;
-
-                case 'xp_boost': // NOT TESTED
-                    await this.updatePlayerXpRate(characterGuid, connection);
-                    break;
-
-                default:
-                    throw new Error(`Tipo de servicio no soportado: ${service.service_type}`);
-            }
-
-            if (updateQuery) {
-                const [result] = await connection.execute(updateQuery, updateParams);
-                if (result.affectedRows === 0) {
-                    if (pendingCheck) {
-                        throw new Error('Este personaje ya tiene este servicio pendiente. Úsalo al entrar al juego antes de volver a comprarlo.');
-                    }
-                    throw new Error('No se pudo aplicar el servicio al personaje');
+            if (!soap) {
+                switch (service.service_type) {
+                    case 'xp_boost': // NOT TESTED
+                        await this.updatePlayerXpRate(characterGuid, connection);
+                        break;
+                    default:
+                        throw new Error(`Tipo de servicio no soportado: ${service.service_type}`);
                 }
             }
 
             const purchaseDetails = JSON.stringify({
                 service_type: service.service_type,
                 applied_at: new Date().toISOString(),
-                character_name: characterName
+                character_name: character.name,
+                via: soap ? 'soap' : 'db'
             });
 
             await connection.execute(`INSERT INTO aa_tienda_service_purchases (accountId, service_id, character_guid, character_name, price_paid, status, details, completed_at) VALUES (?, ?, ?, ?, ?, 'completed', ?, NOW())`,
@@ -322,13 +371,28 @@ class ServiceModel {
                     service.accountId,
                     service.id,
                     characterGuid,
-                    characterName,
+                    character.name,
                     service.token_cost,
                     purchaseDetails
                 ]
             );
 
-            return { success: true, message: 'Servicio aplicado exitosamente' };
+            let message = 'Servicio aplicado exitosamente';
+
+            if (soap) {
+                const result = await executeCommand(soap.command);
+                console.log(`[SOAP] ${soap.command.split(' "')[0]} -> ${result}`);
+
+                if (soap.atLogin) {
+                    message = character.online === 1
+                        ? 'Listo. Sal a la pantalla de selección de personajes y vuelve a entrar para hacer el cambio.'
+                        : 'Listo. El cambio se hará la próxima vez que entres con este personaje.';
+                } else if (soap.message) {
+                    message = soap.message;
+                }
+            }
+
+            return { success: true, message };
 
         } catch (error) {
             console.error('Error aplicando servicio:', error);
@@ -336,7 +400,7 @@ class ServiceModel {
         }
     }
 
-    static async completeServicePurchase(accountId, characterGuid, serviceId, characterName) {
+    static async completeServicePurchase(accountId, characterGuid, serviceId) {
         const connection = await charactersPool.getConnection();
 
         try {
@@ -349,9 +413,8 @@ class ServiceModel {
                 throw new Error('Validación fallida');
             }
 
-            if (character.online === 1) {
-                throw new Error('El personaje debe estar OFFLINE');
-            }
+            // Mismas reglas que en la validación (por si algo cambió entre validar y comprar)
+            await this.checkServicePreconditions(connection, service, character);
 
             // Descuento ATÓMICO: MySQL resta sobre el saldo real y bloquea la fila
             // hasta el commit, así dos compras simultáneas no pueden gastar el mismo saldo.
@@ -364,21 +427,27 @@ class ServiceModel {
                 throw new Error('Tokens insuficientes');
             }
 
-            const serviceWithAccount = {
-                ...service,
-                accountId: accountId
-            };
-
-            // Misma conexión = misma transacción: si el servicio falla, se devuelven los tokens
-            await this.applyService(connection, characterGuid, serviceWithAccount, characterName);
-
             const [balanceRows] = await connection.execute(
                 'SELECT tokens FROM aa_tienda_tokens WHERE accountId = ?',
                 [accountId]
             );
             const newTokenBalance = balanceRows[0].tokens;
 
-            await connection.commit();
+            const serviceWithAccount = {
+                ...service,
+                accountId: accountId
+            };
+
+            // Misma conexión = misma transacción: si el servicio falla, se devuelven los tokens
+            const applied = await this.applyService(connection, character, serviceWithAccount);
+
+            try {
+                await connection.commit();
+            } catch (commitError) {
+                // Caso muy raro: el comando ya se ejecutó pero el cobro no se guardó. Queda en el log para revisarlo.
+                console.error(`[ALERTA] Servicio ${service.id} aplicado a ${character.name} (cuenta ${accountId}) pero falló el commit del cobro:`, commitError);
+                throw commitError;
+            }
 
             // Contador de ventas (otra base de datos): solo tras confirmar la compra
             try {
@@ -396,7 +465,7 @@ class ServiceModel {
                 serviceName: service.name,
                 serviceCost: service.token_cost,
                 characterGuid: characterGuid,
-                message: 'Servicio aplicado exitosamente'
+                message: applied.message
             };
 
         } catch (error) {

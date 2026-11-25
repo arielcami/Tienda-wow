@@ -73,15 +73,21 @@ export async function executeCommand(command) {
     return result ? result[1].trim() : '';
 }
 
+// Valida el nombre de un personaje antes de meterlo en un comando
+export function safeCharacterName(characterName) {
+    const name = sanitizeCommandText(characterName);
+    if (!/^[^\s"]+$/.test(name)) {
+        throw new Error('Nombre de personaje inválido');
+    }
+    return name;
+}
+
 /**
  * Envía un ítem por correo dentro del juego. El worldserver asigna los GUID,
  * así que funciona aunque el personaje esté conectado y no corrompe inventarios.
  */
 export async function sendItemsByMail(characterName, subject, body, itemId, count = 1) {
-    const name = sanitizeCommandText(characterName);
-    if (!/^[^\s"]+$/.test(name)) {
-        throw new Error('Nombre de personaje inválido');
-    }
+    const name = safeCharacterName(characterName);
     const id = parseInt(itemId, 10);
     const qty = parseInt(count, 10);
     if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(qty) || qty <= 0) {

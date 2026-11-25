@@ -359,6 +359,11 @@ class ServicesApp {
         });
     }
 
+    // Solo XP Rate sigue aplicándose directo en la BD; el resto va por SOAP y funciona online
+    requiresOffline(service) {
+        return ['xp_boost'].includes(service?.service_type);
+    }
+
     selectCharacter(character, event) {
         this.selectedCharacter = character;
         document.querySelectorAll('.character-option').forEach(opt => opt.classList.remove('selected'));
@@ -366,8 +371,8 @@ class ServicesApp {
 
         const confirmBtn = document.getElementById('confirm-purchase-btn');
         confirmBtn.disabled = false;
-        if (character.online === 1) {
-            confirmBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Personaje ONLINE - No recomendado';
+        if (character.online === 1 && this.requiresOffline(this.currentService)) {
+            confirmBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Personaje ONLINE - Desconéctalo primero';
             confirmBtn.className = 'btn-service flex-1 bg-gradient-to-r from-yellow-600 to-orange-600';
         } else {
             confirmBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Confirmar Compra';
@@ -390,9 +395,9 @@ class ServicesApp {
             this.showError('Tokens insuficientes');
             return;
         }
-        if (this.selectedCharacter.online === 1) {
-            const confirm = await this.showOnlineWarning();
-            if (!confirm) return;
+        if (this.selectedCharacter.online === 1 && this.requiresOffline(this.currentService)) {
+            this.showError('Este servicio requiere que el personaje esté desconectado. Sal del juego e inténtalo de nuevo.');
+            return;
         }
         await this.processServicePurchase();
     }
@@ -436,9 +441,14 @@ class ServicesApp {
     }
 
     async showPurchaseSuccess(purchaseData) {
+        const escape = (text) => String(text ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const detail = purchaseData.message && purchaseData.message !== 'Servicio aplicado exitosamente'
+            ? `<p class="mt-2">${escape(purchaseData.message)}</p>`
+            : '';
         await Swal.fire({
             title: '¡Servicio Aplicado!',
             html: `<p><strong>${this.currentService.name}</strong> aplicado a <strong>${this.selectedCharacter.name}</strong>.</p>
+                   ${detail}
                    <p class="text-green-300">Nuevo balance: ${purchaseData.newBalance} Tokens</p>`,
             icon: 'success'
         });

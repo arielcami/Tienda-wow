@@ -94,7 +94,7 @@ router.post('/validate', requireAuth, async (req, res) => {
 
 router.post('/purchase', requireAuth, async (req, res) => {
     try {
-        const { characterGuid, serviceId, characterName } = req.body;
+        const { characterGuid, serviceId } = req.body;
         const accountId = req.session.user.accountId;
 
         const character = await ServiceModel.verifyCharacterOwnership(accountId, characterGuid);
@@ -102,11 +102,11 @@ router.post('/purchase', requireAuth, async (req, res) => {
             return res.status(400).json({ error: 'Personaje no válido' });
         }
 
+        // El nombre del personaje se toma de la BD, no del navegador
         const result = await ServiceModel.completeServicePurchase(
             accountId,
             characterGuid,
-            serviceId,
-            characterName || character.name
+            serviceId
         );
 
         res.json(result);
