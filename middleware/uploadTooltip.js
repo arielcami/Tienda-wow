@@ -25,6 +25,11 @@ const storage = multer.diskStorage({
     if (!entry) {
       return cb(new Error('Entry del item no especificado'));
     }
+
+    // Solo números: evita nombres como "../../app" que escribirían fuera de /tooltips
+    if (!/^\d+$/.test(String(entry))) {
+      return cb(new Error('Entry del item inválido'));
+    }
     
     // Obtener extensión del archivo
     const extension = path.extname(file.originalname).toLowerCase();

@@ -186,7 +186,8 @@ class ServiceModel {
         }
     }
 
-    static async teleportPlayerToCapitalCity(characterGuid) {
+    static async teleportPlayerToCapitalCity(characterGuid, connection = null) {
+        const db = connection || charactersPool;
         const hordeRaces = [2, 5, 6, 8, 10];
         /*
         ORGRIMMAR: 	map = 1, position_x = 1641.95, position_y = -4409.32, position_z = 16.9521, orientation = 3.87042, zone = 1637;
@@ -196,7 +197,7 @@ class ServiceModel {
 
         // Comparar la raza del personaje para determinar la facción
         try {
-            const [rows] = await charactersPool.execute(playerRace, [characterGuid]);
+            const [rows] = await db.execute(playerRace, [characterGuid]);
 
             if (rows.length === 0) {
                 throw new Error('Personaje no encontrado');
@@ -220,7 +221,7 @@ class ServiceModel {
                 city = 'Ventormenta';
             }
 
-            const [result] = await charactersPool.execute(teleportQuery, teleportParams);
+            const [result] = await db.execute(teleportQuery, teleportParams);
             
             if (result.affectedRows === 0) {
                 throw new Error('No se pudo teletransportar al personaje a la ciudad principal');
@@ -232,19 +233,21 @@ class ServiceModel {
         }
     }
 
-    static async applyService(characterGuid, service, characterName) {
-        const connection = await charactersPool.getConnection();
-
+    // Aplica el servicio usando la conexión y la transacción de quien lo llama
+    // (completeServicePurchase), para que cobro y servicio se confirmen o reviertan juntos.
+    static async applyService(connection, characterGuid, service, characterName) {
         try {
-            await connection.beginTransaction();
-
-            const isOnline = await this.isCharacterOnline(characterGuid);
-            if (isOnline) {
+            const [onlineRows] = await connection.execute(
+                'SELECT online FROM characters WHERE guid = ?',
+                [characterGuid]
+            );
+            if (onlineRows.length === 0 || onlineRows[0].online === 1) {
                 throw new Error('El personaje está online. No se puede aplicar el servicio.');
             }
 
             let updateQuery = '';
             let updateParams = [];
+            let pendingCheck = false;
 
             switch (service.service_type) {
                 case 'level_up': // TESTED: OK
@@ -259,27 +262,35 @@ class ServiceModel {
                     break;
 
                 case 'rename': // TESTED: OK
-                    updateQuery = 'UPDATE characters SET at_login = at_login + ? WHERE guid = ?';
-                    updateParams = [service.at_login_flag, characterGuid];
+                    // OR de bits: comprar dos veces el mismo servicio no activa otro flag distinto
+                    updateQuery = 'UPDATE characters SET at_login = at_login | ? WHERE guid = ? AND (at_login & ?) = 0';
+                    updateParams = [service.at_login_flag, characterGuid, service.at_login_flag];
+                    pendingCheck = true;
                     break;
 
                 case 'customize': // TESTED: OK
-                    updateQuery = 'UPDATE characters SET at_login = at_login + ? WHERE guid = ?';
-                    updateParams = [service.at_login_flag, characterGuid];
+                    // OR de bits: comprar dos veces el mismo servicio no activa otro flag distinto
+                    updateQuery = 'UPDATE characters SET at_login = at_login | ? WHERE guid = ? AND (at_login & ?) = 0';
+                    updateParams = [service.at_login_flag, characterGuid, service.at_login_flag];
+                    pendingCheck = true;
                     break;
 
                 case 'faction_change': // TESTED: OK
-                    updateQuery = 'UPDATE characters SET at_login = at_login + ? WHERE guid = ?';
-                    updateParams = [service.at_login_flag, characterGuid];
+                    // OR de bits: comprar dos veces el mismo servicio no activa otro flag distinto
+                    updateQuery = 'UPDATE characters SET at_login = at_login | ? WHERE guid = ? AND (at_login & ?) = 0';
+                    updateParams = [service.at_login_flag, characterGuid, service.at_login_flag];
+                    pendingCheck = true;
                     break;
 
                 case 'race_change': // TESTED: OK
-                    updateQuery = 'UPDATE characters SET at_login = at_login + ? WHERE guid = ?';
-                    updateParams = [service.at_login_flag, characterGuid];
+                    // OR de bits: comprar dos veces el mismo servicio no activa otro flag distinto
+                    updateQuery = 'UPDATE characters SET at_login = at_login | ? WHERE guid = ? AND (at_login & ?) = 0';
+                    updateParams = [service.at_login_flag, characterGuid, service.at_login_flag];
+                    pendingCheck = true;
                     break;
 
                 case 'unstuck': // TESTED: OK
-                    await this.teleportPlayerToCapitalCity(characterGuid);
+                    await this.teleportPlayerToCapitalCity(characterGuid, connection);
                     break;
 
                 case 'xp_boost': // NOT TESTED
@@ -293,15 +304,12 @@ class ServiceModel {
             if (updateQuery) {
                 const [result] = await connection.execute(updateQuery, updateParams);
                 if (result.affectedRows === 0) {
+                    if (pendingCheck) {
+                        throw new Error('Este personaje ya tiene este servicio pendiente. Úsalo al entrar al juego antes de volver a comprarlo.');
+                    }
                     throw new Error('No se pudo aplicar el servicio al personaje');
                 }
             }
-
-            // Se actualiza world, no characters
-            await worldPool.execute(
-                'UPDATE aa_tienda_services SET times = times + 1 WHERE id = ?',
-                [service.id]
-            );
 
             const purchaseDetails = JSON.stringify({
                 service_type: service.service_type,
@@ -320,15 +328,11 @@ class ServiceModel {
                 ]
             );
 
-            await connection.commit();
             return { success: true, message: 'Servicio aplicado exitosamente' };
 
         } catch (error) {
-            await connection.rollback();
             console.error('Error aplicando servicio:', error);
             throw error;
-        } finally {
-            connection.release();
         }
     }
 
@@ -338,7 +342,6 @@ class ServiceModel {
         try {
             await connection.beginTransaction();
 
-            const userTokens = await this.getUserTokens(accountId);
             const service = await this.getServiceDetails(serviceId);
             const character = await this.verifyCharacterOwnership(accountId, characterGuid);
 
@@ -350,25 +353,42 @@ class ServiceModel {
                 throw new Error('El personaje debe estar OFFLINE');
             }
 
-            if (userTokens < service.token_cost) {
+            // Descuento ATÓMICO: MySQL resta sobre el saldo real y bloquea la fila
+            // hasta el commit, así dos compras simultáneas no pueden gastar el mismo saldo.
+            const [debit] = await connection.execute(
+                'UPDATE aa_tienda_tokens SET tokens = tokens - ? WHERE accountId = ? AND tokens >= ?',
+                [service.token_cost, accountId, service.token_cost]
+            );
+
+            if (debit.affectedRows === 0) {
                 throw new Error('Tokens insuficientes');
             }
 
-            const newTokenBalance = userTokens - service.token_cost;
-            await connection.execute(
-                'UPDATE aa_tienda_tokens SET tokens = ? WHERE accountId = ?',
-                [newTokenBalance, accountId]
-            );
-
-            // CORRECCIÓN: Agregar accountId al objeto service
             const serviceWithAccount = {
                 ...service,
                 accountId: accountId
             };
 
-            await this.applyService(characterGuid, serviceWithAccount, characterName);
+            // Misma conexión = misma transacción: si el servicio falla, se devuelven los tokens
+            await this.applyService(connection, characterGuid, serviceWithAccount, characterName);
+
+            const [balanceRows] = await connection.execute(
+                'SELECT tokens FROM aa_tienda_tokens WHERE accountId = ?',
+                [accountId]
+            );
+            const newTokenBalance = balanceRows[0].tokens;
 
             await connection.commit();
+
+            // Contador de ventas (otra base de datos): solo tras confirmar la compra
+            try {
+                await worldPool.execute(
+                    'UPDATE aa_tienda_services SET times = times + 1 WHERE id = ?',
+                    [service.id]
+                );
+            } catch (statsError) {
+                console.error('Error actualizando contador del servicio:', statsError);
+            }
 
             return {
                 success: true,

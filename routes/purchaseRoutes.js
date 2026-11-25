@@ -23,33 +23,6 @@ router.get('/characters', requireAuth, async (req, res) => {
     }
 });
 
-// Realizar compra
-router.post('/purchase', requireAuth, async (req, res) => {
-    try {
-        const { characterGuid, itemEntry, characterName } = req.body;
-        const accountId = req.session.user.accountId;
-
-        // Verificar que el personaje pertenece al usuario
-        const character = await ItemModel.verifyCharacterOwnership(accountId, characterGuid);
-        if (!character) {
-            return res.status(400).json({ error: 'Personaje no válido' });
-        }
-
-        // Realizar la compra
-        const result = await ItemModel.purchaseItem(accountId, characterGuid, itemEntry, characterName);
-
-        res.json(result);
-
-    } catch (error) {
-        console.error('Error en compra:', error);
-        res.status(400).json({
-            success: false,
-            error: error.message
-        });
-    }
-});
-
-
 // Validar compra (sin ejecutarla todavía)
 router.post('/validate', requireAuth, async (req, res) => {
     try {

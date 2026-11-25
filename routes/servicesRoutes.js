@@ -1,5 +1,6 @@
 import express from 'express';
 import ServiceModel from '../models/serviceModel.js';
+import database from '../config/database.js';
 
 const router = express.Router();
 

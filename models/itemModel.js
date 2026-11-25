@@ -1,5 +1,6 @@
 import database from '../config/database.js';
 import iconService from '../services/iconService.js';
+import { sendItemsByMail } from '../util/soapClient.js';
 
 const { worldPool, charactersPool } = database;
 
@@ -294,57 +295,18 @@ class ItemModel {
     }
 
     // Enviar item por correo
-    static async sendItemByMail(connection, characterGuid, itemId, itemName, characterName) {
+    // El worldserver crea el ítem y el correo (vía SOAP): él asigna los GUID,
+    // así no hay choques con ítems creados dentro del juego.
+    static async sendItemByMail(characterName, itemId, itemName) {
         try {
-            const [maxGuidResult] = await connection.execute(
-                'SELECT COALESCE(MAX(guid), 0) as max_guid FROM item_instance'
+            const result = await sendItemsByMail(
+                characterName,
+                `Compra en tienda: ${itemName}`,
+                `Hola ${characterName}, has comprado ${itemName} en nuestra tienda. Esperamos que lo disfrutes! Atentamente, Sistema de Tienda`,
+                itemId,
+                1
             );
-            const newGUID = parseInt(maxGuidResult[0].max_guid) + 1;
-
-            const [maxMail] = await connection.execute(
-                'SELECT COALESCE(MAX(id), 0) + 1 as next_mail_id FROM mail'
-            );
-            const mailId = maxMail[0].next_mail_id;
-
-            const [itemDurability] = await worldPool.execute(
-                'SELECT MaxDurability FROM item_template WHERE entry = ?',
-                [itemId]
-            );
-
-            const durability = itemDurability.length > 0 ? itemDurability[0].MaxDurability : 0;
-
-            const currentTime = Math.floor(Date.now() / 1000);
-            const deliverTime = currentTime;
-            const expireTime = currentTime + (30 * 24 * 60 * 60);
-
-            await connection.execute(
-                `INSERT INTO item_instance 
-                 (guid, itemEntry, owner_guid, creatorGuid, giftCreatorGuid, count, duration, charges, flags, enchantments, randomPropertyId, durability, playedTime, text) 
-                 VALUES (?, ?, ?, 0, 0, 1, 0, '0 0 0 0 0', 0, 
-                 '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0', 
-                 0, ?, 0, NULL)`,
-                [newGUID, itemId, characterGuid, durability]
-            );
-
-            await connection.execute(
-                `INSERT INTO mail 
-                 (id, messageType, stationery, mailTemplateId, sender, receiver, subject, body, has_items, expire_time, deliver_time, money, cod, checked) 
-                 VALUES (?, 0, 61, 0, 1, ?, ?, ?, 1, ?, ?, 0, 0, 0)`,
-                [
-                    mailId,
-                    characterGuid,
-                    `Compra en tienda: ${itemName}`,
-                    `Hola ${characterName},\n\nHas comprado ${itemName} en nuestra tienda. Esperamos que lo disfrutes!\n\nAtentamente,\nSistema de Tienda`,
-                    expireTime,
-                    deliverTime
-                ]
-            );
-
-            await connection.execute(
-                'INSERT INTO mail_items (mail_id, item_guid, receiver) VALUES (?, ?, ?)',
-                [mailId, newGUID, characterGuid]
-            );
-
+            console.log(`[SOAP] ${result}`);
         } catch (error) {
             console.error('Error enviando item por correo:', error);
             throw new Error('Error al enviar el item por correo: ' + error.message);
@@ -433,17 +395,6 @@ class ItemModel {
                 throw new Error('Rating inválido. Debe ser entre 1 y 10');
             }
 
-            const [tokenRows] = await connection.execute(
-                'SELECT tokens FROM aa_tienda_tokens WHERE accountId = ?',
-                [accountId]
-            );
-
-            if (tokenRows.length === 0) {
-                throw new Error('No se encontraron tokens para esta cuenta');
-            }
-
-            const userTokens = tokenRows[0].tokens;
-
             const [itemRows] = await worldPool.execute(
                 'SELECT token_cost, name FROM aa_store_items WHERE entry = ? AND estado = 1',
                 [itemEntry]
@@ -456,13 +407,9 @@ class ItemModel {
             const itemCost = itemRows[0].token_cost;
             const itemName = itemRows[0].name;
 
-            if (userTokens < itemCost) {
-                throw new Error(`Tokens insuficientes. Necesitas ${itemCost} tokens, tienes ${userTokens}`);
-            }
-
             const [characterStatus] = await connection.execute(
-                'SELECT online FROM characters WHERE guid = ?',
-                [characterGuid]
+                'SELECT online, name FROM characters WHERE guid = ? AND account = ?',
+                [characterGuid, accountId]
             );
 
             if (characterStatus.length === 0) {
@@ -473,13 +420,31 @@ class ItemModel {
                 throw new Error('El personaje debe estar OFFLINE para recibir items por correo');
             }
 
-            const newTokenBalance = userTokens - itemCost;
-            await connection.execute(
-                'UPDATE aa_tienda_tokens SET tokens = ? WHERE accountId = ?',
-                [newTokenBalance, accountId]
+            characterName = characterStatus[0].name;
+
+            // Descuento ATÓMICO: MySQL resta sobre el saldo real y bloquea la fila
+            // hasta el commit, así dos compras simultáneas no pueden gastar el mismo saldo.
+            const [debit] = await connection.execute(
+                'UPDATE aa_tienda_tokens SET tokens = tokens - ? WHERE accountId = ? AND tokens >= ?',
+                [itemCost, accountId, itemCost]
             );
 
-            await this.sendItemByMail(connection, characterGuid, itemEntry, itemName, characterName);
+            if (debit.affectedRows === 0) {
+                const [tokenRows] = await connection.execute(
+                    'SELECT tokens FROM aa_tienda_tokens WHERE accountId = ?',
+                    [accountId]
+                );
+                if (tokenRows.length === 0) {
+                    throw new Error('No se encontraron tokens para esta cuenta');
+                }
+                throw new Error(`Tokens insuficientes. Necesitas ${itemCost} tokens, tienes ${tokenRows[0].tokens}`);
+            }
+
+            const [balanceRows] = await connection.execute(
+                'SELECT tokens FROM aa_tienda_tokens WHERE accountId = ?',
+                [accountId]
+            );
+            const newTokenBalance = balanceRows[0].tokens;
 
             await connection.execute(
                 'INSERT INTO aa_tienda_purchases (playerId, playerName, purchase, amount, estado, rated) VALUES (?, ?, ?, 1, 1, 1)',
@@ -502,12 +467,26 @@ class ItemModel {
             const newAverage = parseFloat(ratingStats[0].avg_rating) || 0;
             const totalRatings = ratingStats[0].total_ratings;
 
-            await worldPool.execute(
-                'UPDATE aa_store_items SET times = times + 1, stars = ?, total_ratings = ? WHERE entry = ?',
-                [newAverage.toFixed(2), totalRatings, itemEntry]
-            );
+            // El envío va al final: si algo anterior falla, no se entrega nada y se revierte el cobro.
+            // Si el envío falla, el catch hace rollback y los tokens vuelven al jugador.
+            await this.sendItemByMail(characterName, itemEntry, itemName);
 
-            await connection.commit();
+            try {
+                await connection.commit();
+            } catch (commitError) {
+                // Caso muy raro: el ítem ya se envió pero el cobro no se guardó. Queda en el log para revisarlo.
+                console.error(`[ALERTA] Item ${itemEntry} enviado a ${characterName} (cuenta ${accountId}) pero falló el commit del cobro:`, commitError);
+                throw commitError;
+            }
+
+            try {
+                await worldPool.execute(
+                    'UPDATE aa_store_items SET times = times + 1, stars = ?, total_ratings = ? WHERE entry = ?',
+                    [newAverage.toFixed(2), totalRatings, itemEntry]
+                );
+            } catch (statsError) {
+                console.error('Error actualizando estadísticas del item:', statsError);
+            }
 
             return {
                 success: true,

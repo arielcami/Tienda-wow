@@ -30,33 +30,6 @@ router.get('/pending', requireAuth, async (req, res) => {
     }
 });
 
-// Calificar un item después de la compra
-router.post('/rate', requireAuth, async (req, res) => {
-    try {
-        const { characterGuid, itemEntry, rating } = req.body;
-        const accountId = req.session.user.accountId;
-
-        // Validaciones básicas
-        if (!characterGuid || !itemEntry || !rating) {
-            return res.status(400).json({
-                success: false,
-                error: 'Faltan parámetros requeridos'
-            });
-        }
-
-        const result = await ItemModel.rateItem(accountId, characterGuid, itemEntry, rating);
-
-        res.json(result);
-
-    } catch (error) {
-        console.error('Error calificando item:', error);
-        res.status(400).json({
-            success: false,
-            error: error.message
-        });
-    }
-});
-
 // Obtener rating actual de un item
 router.get('/item/:entry', requireAuth, async (req, res) => {
     try {

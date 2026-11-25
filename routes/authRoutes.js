@@ -8,6 +8,16 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 const router = express.Router();
+
+// Escapa texto antes de insertarlo en HTML (evita XSS vía ?error=)
+function escapeHtml(text) {
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 const { authPool, charactersPool } = database; // Añadir authPool
 
 // Para manejar __dirname en ES modules
@@ -217,7 +227,7 @@ router.get('/login', (req, res) => {
         ${req.query.error ? `
         <div class="error-message mb-6">
             <i class="fas fa-exclamation-triangle mr-2"></i>
-            <span>${req.query.error}</span>
+            <span>${escapeHtml(req.query.error)}</span>
         </div>
         ` : ''}
 
@@ -310,11 +320,17 @@ router.get('/register', (req, res) => {
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
-    const result = await AuthModel.loginTienda(username, password);
+    const result = await AuthModel.loginTienda(username, password, req.ip);
 
     if (result.success) {
-        req.session.user = result.user;
-        res.redirect('/tienda');
+        req.session.regenerate((err) => {
+            if (err) {
+                console.error('Error regenerando sesión:', err);
+                return res.redirect(`/auth/login?error=${encodeURIComponent('Error del servidor')}`);
+            }
+            req.session.user = result.user;
+            req.session.save(() => res.redirect('/tienda'));
+        });
     } else {
         res.redirect(`/auth/login?error=${encodeURIComponent(result.message)}`);
     }
@@ -483,8 +499,10 @@ router.post('/register', async (req, res) => {
 
 // Logout
 router.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/auth/login');
+    req.session.destroy(() => {
+        res.clearCookie('wowstore.sid');
+        res.redirect('/auth/login');
+    });
 });
 
 // Obtener personajes

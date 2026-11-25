@@ -20,7 +20,12 @@ services:
       - DB_WORLD_USER=${DB_WORLD_USER:-root}
       - DB_WORLD_PASSWORD=${DB_WORLD_PASSWORD:-acore}
       - DB_WORLD_DATABASE=${DB_WORLD_DATABASE:-one_wow_world}
-      - SESSION_SECRET=${SESSION_SECRET:-wow-store-secret-key}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
+      - SOAP_HOST=host.docker.internal
+      - SOAP_PORT=${SOAP_PORT:-7878}
+      - SOAP_USER=${SOAP_USER:-}
+      - SOAP_PASSWORD=${SOAP_PASSWORD:-}
       - NODE_ENV=production
     extra_hosts:
       - "host.docker.internal:host-gateway"

@@ -106,19 +106,6 @@ router.get('/details/:entry', requireAuth, async (req, res) => {
     }
 });
 
-// Ruta de debug
-router.get('/debug/data', requireAuth, async (req, res) => {
-    try {
-        const tableData = await ItemModel.checkTableData();
-        res.json(tableData);
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-});
-
 // Obtener tokens del usuario
 router.get('/user/tokens', requireAuth, async (req, res) => {
     try {

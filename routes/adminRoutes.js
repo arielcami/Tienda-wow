@@ -225,7 +225,7 @@ router.delete('/items/:entry/remove-tooltip', async (req, res) => {
 		}
 
 		// Eliminar archivo físico
-		const filePath = path.join(__dirname, '../public/tooltips', currentImage);
+		const filePath = path.join(__dirname, '../public/tooltips', path.basename(currentImage));
 		if (fs.existsSync(filePath)) {
 			fs.unlinkSync(filePath);
 		}
@@ -247,6 +247,62 @@ router.delete('/items/:entry/remove-tooltip', async (req, res) => {
 			success: false,
 			error: 'Error al eliminar la imagen'
 		});
+	}
+});
+
+
+// Ruta para subir/reemplazar solo la imagen de tooltip de un item existente
+// (la usa el botón "Subir imagen" del panel admin)
+router.post('/items/:entry/upload-tooltip', (req, res, next) => {
+	if (!/^\d+$/.test(req.params.entry)) {
+		return res.status(400).json({ success: false, error: 'Entry inválido' });
+	}
+	next();
+}, uploadTooltip.single('tooltipImage'), async (req, res) => {
+	try {
+		const entry = req.params.entry;
+
+		if (!req.file) {
+			return res.status(400).json({ success: false, error: 'No se recibió ninguna imagen' });
+		}
+
+		const [rows] = await worldPool.execute(
+			'SELECT tooltip_image FROM aa_store_items WHERE entry = ?',
+			[entry]
+		);
+
+		if (rows.length === 0) {
+			fs.unlinkSync(req.file.path);
+			return res.status(404).json({ success: false, error: 'Item no encontrado' });
+		}
+
+		// Si la imagen anterior tenía otra extensión (ej. .jpg → .png), borrar la vieja
+		const previous = rows[0].tooltip_image;
+		if (previous && previous !== req.file.filename) {
+			const oldPath = path.join(__dirname, '../public/tooltips', path.basename(previous));
+			if (fs.existsSync(oldPath)) {
+				fs.unlinkSync(oldPath);
+			}
+		}
+
+		await worldPool.execute(
+			'UPDATE aa_store_items SET tooltip_image = ? WHERE entry = ?',
+			[req.file.filename, entry]
+		);
+
+		res.json({
+			success: true,
+			filename: req.file.filename,
+			url: `/tooltips/${req.file.filename}`,
+			message: 'Imagen subida correctamente'
+		});
+
+	} catch (error) {
+		console.error('Error subiendo imagen de tooltip:', error);
+		if (req.file && fs.existsSync(req.file.path)) {
+			fs.unlinkSync(req.file.path);
+		}
+		res.status(500).json({ success: false, error: 'Error al subir la imagen' });
 	}
 });
 

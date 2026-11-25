@@ -1,5 +1,6 @@
 import express from 'express';
 import session from 'express-session';
+import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import database from './config/database.js';
@@ -23,15 +24,46 @@ const { authPool } = database;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// No anunciar que el servidor usa Express
+app.disable('x-powered-by');
+
+// Si el portal está detrás de un proxy (Nginx, Cloudflare, etc.) pon TRUST_PROXY=1 en .env
+// para que req.ip sea la IP real del jugador y no la del proxy.
+if (process.env.TRUST_PROXY) {
+    app.set('trust proxy', Number(process.env.TRUST_PROXY) || 1);
+}
+
+// Cabeceras básicas de seguridad
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'same-origin');
+    next();
+});
+
+// Secreto de sesión: debe venir de .env (SESSION_SECRET). Si falta, se genera uno al azar
+// (funciona, pero todos los jugadores pierden la sesión cada vez que reinicias el portal).
+let sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+    sessionSecret = crypto.randomBytes(32).toString('hex');
+    console.warn('[AVISO] SESSION_SECRET no está en .env: se usó uno temporal. Las sesiones se perderán al reiniciar.');
+}
+
 // Configuración
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(session({
-    secret: 'wow-store-secret-key',
+    name: 'wowstore.sid',
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: {
+        httpOnly: true,                                  // JavaScript del navegador no puede leer la cookie
+        sameSite: 'lax',                                 // otros sitios no pueden enviar peticiones con tu sesión
+        secure: process.env.COOKIE_SECURE === 'true',    // pon COOKIE_SECURE=true cuando uses HTTPS
+        maxAge: 12 * 60 * 60 * 1000                      // la sesión dura 12 horas
+    }
 }));
 
 // Middleware para verificar autenticación
@@ -148,14 +180,15 @@ app.get('/api/admin/check', requireAuth, async (req, res) => {
     }
 });
 
-// Ruta de prueba de conexión a BD (mantener para debug)
-app.get('/test-db', async (req, res) => {
+// Ruta de prueba de conexión a BD (solo admin; no muestra detalles del error al navegador)
+app.get('/test-db', requireAdmin, async (req, res) => {
     try {
         const { worldPool } = database;
         const [rows] = await worldPool.execute('SELECT 1 + 1 AS result');
         res.json({ message: 'Conexión a BD exitosa', result: rows[0].result });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error en /test-db:', error);
+        res.status(500).json({ error: 'No se pudo conectar a la base de datos (revisa la consola del portal)' });
     }
 });
 
@@ -167,6 +200,6 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log('  • Tienda: http://localhost:' + PORT + '/tienda (requiere login)');
     console.log('  • Servicios: http://localhost:' + PORT + '/servicios (requiere login)');
     console.log('  • Admin: http://localhost:' + PORT + '/admin (solo ID 1)');
-    console.log('  • Test DB: http://localhost:' + PORT + '/test-db');
+    console.log('  • Test DB: http://localhost:' + PORT + '/test-db (solo admin)');
     console.log('  • Tooltips: http://localhost:' + PORT + '/tooltips/ (imágenes estáticas)');
 });
